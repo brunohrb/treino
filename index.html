@@ -2,9 +2,28 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="format-detection" content="telephone=no">
+
+    <!-- PWA / Standalone (iOS + Android) -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="BHR Treinos">
+    <meta name="application-name" content="BHR Treinos">
+    <meta name="theme-color" content="#0F1419">
+
+    <!-- Ícones (usados pelo Safari ao adicionar à Tela de Início) -->
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="apple-touch-icon-152.png">
+    <link rel="apple-touch-icon" sizes="167x167" href="apple-touch-icon-167.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link rel="icon" type="image/svg+xml" href="icon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
+    <link rel="shortcut icon" href="favicon-32.png">
+    <link rel="manifest" href="manifest.webmanifest">
+
     <title>BHR Treinos</title>
     <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -41,6 +60,12 @@
             touch-action: manipulation;
         }
         
+html, body {
+    height: 100%;
+    background: var(--dark);
+    overscroll-behavior-y: none; /* evita efeito "rubber band" no iOS */
+}
+
 body {
     font-family: 'DM Sans', sans-serif;
     background: var(--dark);
@@ -51,6 +76,66 @@ body {
     touch-action: manipulation;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+    /* Seleção desligada por padrão para dar sensação de app nativo */
+    -webkit-user-select: none;
+    user-select: none;
+    /* Safe areas no modo standalone */
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Permite seleção em campos de texto (UX de app respeitosa) */
+input, textarea, [contenteditable="true"] {
+    -webkit-user-select: text;
+    user-select: text;
+}
+
+/* Ajustes quando instalado na Tela de Início (standalone) */
+@media all and (display-mode: standalone) {
+    body { background: var(--dark); }
+    /* Sem destaque azul em links iOS */
+    a { -webkit-touch-callout: none; }
+}
+
+/* iOS: previne zoom em inputs (requer font-size >= 16px) */
+input, select, textarea {
+    font-size: 16px;
+}
+
+/* Banner "Adicionar à Tela de Início" para iOS Safari */
+.ios-install-banner {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: calc(12px + env(safe-area-inset-bottom));
+    z-index: 9999;
+    background: var(--dark-card);
+    border: 1px solid rgba(0, 217, 177, 0.35);
+    border-radius: 16px;
+    padding: 14px 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+    display: none;
+    align-items: center;
+    gap: 12px;
+    color: var(--text);
+    font-size: 0.92rem;
+    animation: iosBannerIn 0.35s ease-out;
+}
+.ios-install-banner.show { display: flex; }
+.ios-install-banner .ios-install-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: var(--gradient-1);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; flex-shrink: 0;
+}
+.ios-install-banner .ios-install-text { flex: 1; line-height: 1.35; }
+.ios-install-banner .ios-install-text strong { display:block; margin-bottom: 2px; }
+.ios-install-banner .ios-install-close {
+    background: transparent; border: 0; color: var(--text-muted);
+    font-size: 22px; padding: 4px 8px; cursor: pointer;
+}
+@keyframes iosBannerIn {
+    from { transform: translateY(120%); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
 }
 
 
@@ -2180,6 +2265,16 @@ header {
     </style>
 </head>
 <body>
+    <!-- Banner iOS: Adicionar à Tela de Início -->
+    <div id="iosInstallBanner" class="ios-install-banner" role="dialog" aria-live="polite">
+        <div class="ios-install-icon">📲</div>
+        <div class="ios-install-text">
+            <strong>Instale o BHR Treinos</strong>
+            Toque em <span aria-label="Compartilhar">⬆️</span> e depois em <strong>&ldquo;Adicionar à Tela de Início&rdquo;</strong> para usar como app.
+        </div>
+        <button class="ios-install-close" type="button" aria-label="Fechar" onclick="dismissIosInstallBanner()">×</button>
+    </div>
+
     <header>
         <div class="header-content">
             <div class="logo">BHR Treinos</div>
@@ -3059,6 +3154,52 @@ header {
     </div>
 
     <script>
+    // =====================================================
+    // IOS / PWA — sensação de app nativo
+    // =====================================================
+    (function iosAppFeel() {
+        const ua = navigator.userAgent || '';
+        const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+                          || window.navigator.standalone === true;
+
+        // Marca o <html> para CSS poder reagir
+        document.documentElement.classList.toggle('ios', isIOS);
+        document.documentElement.classList.toggle('standalone', isStandalone);
+
+        // Evita zoom por duplo-toque no iOS
+        let lastTouch = 0;
+        document.addEventListener('touchend', (e) => {
+            const now = Date.now();
+            if (now - lastTouch <= 350) { e.preventDefault(); }
+            lastTouch = now;
+        }, { passive: false });
+
+        // Evita zoom por gesto com dois dedos (pinça)
+        document.addEventListener('gesturestart', (e) => e.preventDefault());
+
+        // Banner "Adicionar à Tela de Início" — só iOS Safari, e só se NÃO instalado
+        const DISMISS_KEY = 'bhr_ios_install_dismissed_v1';
+        function showIosInstallBannerIfNeeded() {
+            if (!isIOS || isStandalone) return;
+            if (localStorage.getItem(DISMISS_KEY) === '1') return;
+            // Safari iOS (evita exibir em apps in-app como Instagram/FB)
+            const isSafari = /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS|GSA/.test(ua);
+            if (!isSafari) return;
+            const el = document.getElementById('iosInstallBanner');
+            if (el) {
+                setTimeout(() => el.classList.add('show'), 1200);
+            }
+        }
+        window.dismissIosInstallBanner = function() {
+            const el = document.getElementById('iosInstallBanner');
+            if (el) el.classList.remove('show');
+            localStorage.setItem(DISMISS_KEY, '1');
+        };
+        document.addEventListener('DOMContentLoaded', showIosInstallBannerIfNeeded);
+        if (document.readyState !== 'loading') showIosInstallBannerIfNeeded();
+    })();
+
     // =====================================================
     // SUPABASE
     // =====================================================

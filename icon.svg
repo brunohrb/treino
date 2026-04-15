@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00E5BC"/>
+      <stop offset="55%" stop-color="#00D9B1"/>
+      <stop offset="100%" stop-color="#00A884"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.35"/>
+      <stop offset="55%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="6"/>
+      <feOffset dx="0" dy="4" result="off"/>
+      <feComponentTransfer><feFuncA type="linear" slope="0.35"/></feComponentTransfer>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Full square background: iOS applies the squircle mask automatically -->
+  <rect x="0" y="0" width="512" height="512" fill="url(#bg)"/>
+
+  <!-- Subtle top highlight -->
+  <rect x="0" y="0" width="512" height="260" fill="url(#shine)"/>
+
+  <!-- Dumbbell icon -->
+  <g filter="url(#softShadow)">
+    <!-- bar -->
+    <rect x="128" y="238" width="256" height="36" rx="10" fill="#ffffff"/>
+    <!-- left weight -->
+    <rect x="86"  y="198" width="48"  height="116" rx="14" fill="#ffffff"/>
+    <rect x="58"  y="214" width="32"  height="84"  rx="12" fill="#ffffff"/>
+    <!-- right weight -->
+    <rect x="378" y="198" width="48"  height="116" rx="14" fill="#ffffff"/>
+    <rect x="422" y="214" width="32"  height="84"  rx="12" fill="#ffffff"/>
+  </g>
+
+  <!-- BHR text -->
+  <text x="256" y="430"
+        text-anchor="middle"
+        font-family="'Archivo Black', 'Helvetica Neue', Arial, sans-serif"
+        font-weight="900"
+        font-size="112"
+        letter-spacing="4"
+        fill="#ffffff">BHR</text>
+</svg>
