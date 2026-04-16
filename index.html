@@ -4144,6 +4144,11 @@ CREATE POLICY "user_own" ON bhr_scans      FOR ALL USING (auth.uid()::text = use
     // Inicializa chips: clique seleciona, hidden input recebe valor (single ou multi)
     function _initWizardChips() {
         document.querySelectorAll('.chip-group').forEach(group => {
+            // Guarda contra dupla inicialização — evita múltiplos listeners
+            // que faziam chips multi-select togglarem 2x por clique (net zero).
+            if (group.dataset._initialized === '1') return;
+            group.dataset._initialized = '1';
+
             const field = group.dataset.field;
             const isMulti = group.dataset.multi === 'true';
             const hidden = document.getElementById(field);
@@ -4180,7 +4185,8 @@ CREATE POLICY "user_own" ON bhr_scans      FOR ALL USING (auth.uid()::text = use
     }
     // Inicializa quando DOM carrega
     document.addEventListener('DOMContentLoaded', _initWizardChips);
-    // Backup: se o script carregar depois, tenta de novo após delay
+    // Backup: chama de novo após delay (caso DOMContentLoaded já tenha passado).
+    // A guarda de _initialized impede listeners duplicados.
     setTimeout(() => { try { _initWizardChips(); } catch(e) {} }, 500);
 
     function notify(msg) {
