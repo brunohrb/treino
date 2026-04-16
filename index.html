@@ -2199,6 +2199,173 @@ header {
     max-width: 140px;
 }
 
+/* =====================================================
+   MELHORIAS UX MOBILE (iPhone-first)
+   - Touch targets ≥44px (Apple HIG)
+   - Tap highlights e feedback tátil
+   - Tipografia maior/melhor leitura
+   - Novos campos da IA (carga, descanso, alternativa, etc)
+   ===================================================== */
+
+/* Novos campos por exercício */
+.ex-carga {
+    font-size: 0.78rem;
+    color: var(--warning);
+    margin-top: 0.25rem;
+    font-weight: 600;
+}
+.ex-descanso-pill {
+    display: inline-block;
+    background: rgba(252,211,77,0.15);
+    color: var(--warning);
+    border: 1px solid rgba(252,211,77,0.3);
+    border-radius: 999px;
+    padding: 0.1rem 0.55rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    margin-left: 0.4rem;
+    vertical-align: middle;
+}
+.ex-alt {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+    padding-left: 0.55rem;
+    border-left: 2px solid rgba(167,139,250,0.4);
+    font-style: italic;
+}
+
+/* Aquecimento e alongamento (cabeçalho/rodapé do treino) */
+.treino-warm-cool {
+    font-size: 0.82rem;
+    color: var(--text);
+    padding: 0.7rem 0.9rem;
+    border-radius: 12px;
+    margin-bottom: 0.6rem;
+    line-height: 1.4;
+}
+.treino-warm-cool.warmup {
+    background: rgba(249,115,22,0.10);
+    border-left: 3px solid #F97316;
+    color: #FED7AA;
+}
+.treino-warm-cool.cooldown {
+    background: rgba(74,222,128,0.10);
+    border-left: 3px solid var(--success);
+    color: #BBF7D0;
+    margin-top: 0.6rem;
+    margin-bottom: 0;
+}
+.treino-warm-cool strong { color: var(--text); font-weight: 700; }
+
+/* Pílulas de grupos musculares */
+.treino-grupos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-bottom: 0.75rem;
+}
+.grupo-pill {
+    background: rgba(0,217,177,0.12);
+    color: var(--primary);
+    border: 1px solid rgba(0,217,177,0.25);
+    border-radius: 999px;
+    padding: 0.2rem 0.7rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Touch feedback global pra todos botões */
+.btn:active, .nav-tab:active, .ex-check-btn:active, .ex-rest-btn:active,
+.ex-yt-btn:active, .ex-del-btn:active {
+    transform: scale(0.96);
+    transition: transform 0.08s ease-out;
+}
+
+/* Mobile: garantir touch targets ≥44px (Apple HIG) e tipografia legível */
+@media (max-width: 768px) {
+    /* Botões de ação no exercício: 40px no mobile (compromisso entre ergonomia e densidade) */
+    .ex-rest-btn, .ex-yt-btn, .ex-del-btn, .ex-check-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+    /* Botões principais maiores e mais clicáveis */
+    .btn {
+        min-height: 50px;
+        font-size: 0.95rem;
+        border-radius: 14px;
+    }
+    .btn-small {
+        min-height: 42px;
+        font-size: 0.85rem;
+    }
+    /* Nav inferior com mais ar */
+    .nav-tab {
+        min-height: 44px;
+        padding: 0.75rem 1rem;
+        font-size: 0.85rem;
+    }
+    /* Tipografia: nome do exercício mais legível */
+    .ex-nome { font-size: 0.95rem; }
+    .ex-series { font-size: 0.85rem; }
+    .ex-obs { font-size: 0.78rem; line-height: 1.45; }
+    .card-title { font-size: 1.15rem; }
+    /* Inputs maiores pra digitação confortável */
+    input, select, textarea {
+        font-size: 16px; /* evita zoom automático do iOS ao focar */
+        min-height: 50px;
+    }
+    /* Floating rest timer maior pra ler de longe */
+    #restTimerFloat {
+        bottom: calc(env(safe-area-inset-bottom, 0) + 5.5rem);
+        min-width: 175px;
+        padding: 1.1rem 1.3rem;
+    }
+    #restTimerFloat .rt-time { font-size: 3.2rem; }
+    #restTimerFloat .rt-label { font-size: 0.8rem; }
+    /* Modal mais alto no mobile pra usar tela toda */
+    .modal-content {
+        max-height: 92vh;
+        border-radius: 20px;
+    }
+    /* Cards com padding mobile mais compacto mas legível */
+    .card {
+        padding: 1.1rem;
+        border-radius: 18px;
+    }
+    /* Safe area inset bottom pra não cobrir conteúdo no iPhone com home indicator */
+    .container {
+        padding-bottom: calc(env(safe-area-inset-bottom, 0) + 1rem);
+    }
+}
+
+/* iPhone pequeno (SE, mini): aperta um pouco mais */
+@media (max-width: 380px) {
+    .ex-row { gap: 0.5rem; padding: 0.65rem; }
+    .ex-actions { gap: 0.3rem; }
+    .ex-rest-btn, .ex-yt-btn, .ex-del-btn, .ex-check-btn {
+        width: 36px;
+        height: 36px;
+    }
+}
+
+/* PWA standalone (instalado na tela inicial): aproveita tela cheia */
+@media all and (display-mode: standalone) {
+    body { overscroll-behavior-y: contain; } /* evita "puxar pra atualizar" estranho */
+    header { padding-top: max(env(safe-area-inset-top), 0.5rem); }
+}
+
+/* Reduz motion pra quem prefere */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
     </style>
 </head>
 <body>
@@ -3489,17 +3656,29 @@ CREATE POLICY "user_own" ON bhr_scans      FOR ALL USING (auth.uid()::text = use
         const apiKey = localStorage.getItem(DB.openai);
         if (!apiKey) throw new Error('Chave OpenAI não configurada');
         const modelo = getModeloIA();
+        // System message especializado por contexto: prompt mais focado = output melhor
+        const systemMsgs = {
+            treino: 'Você é um personal trainer CREF nível elite com 15+ anos de experiência em prescrição de treinos personalizados. Você domina periodização, biomecânica, fisiologia do exercício e metodologias como RPE/RIR, tempo sob tensão e princípios da sobrecarga progressiva. Você sempre considera dados biológicos, histórico real e objetivos do aluno. Quando solicitado JSON, retorna APENAS JSON válido sem markdown, sem texto extra. Nunca inventa exercícios — usa apenas movimentos consagrados na musculação e calistenia.',
+            geral:   'Você é um personal trainer e nutricionista experiente. Seja objetivo, motivador e profissional.'
+        };
+        const sysContent = systemMsgs[contexto] || systemMsgs.geral;
+        const body = {
+            model: modelo,
+            messages: [
+                { role: 'system', content: sysContent },
+                { role: 'user', content: prompt }
+            ],
+            temperature: contexto === 'treino' ? 0.55 : 0.7,
+            max_tokens: contexto === 'treino' ? 4000 : 3000
+        };
+        // GPT-4o e GPT-4o-mini suportam response_format: json_object — força saída JSON válida
+        if (contexto === 'treino' && (modelo === 'gpt-4o' || modelo === 'gpt-4o-mini')) {
+            body.response_format = { type: 'json_object' };
+        }
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-            body: JSON.stringify({
-                model: modelo,
-                messages: [
-                    { role: 'system', content: 'Você é um personal trainer e nutricionista experiente. Seja objetivo, motivador e profissional.' },
-                    { role: 'user', content: prompt }
-                ],
-                temperature: 0.7, max_tokens: 3000
-            })
+            body: JSON.stringify(body)
         });
         if (!response.ok) {
             const err = await response.json().catch(() => ({}));
@@ -3617,9 +3796,13 @@ CREATE POLICY "user_own" ON bhr_scans      FOR ALL USING (auth.uid()::text = use
         const nome = ex.nome || 'Exercício';
         const series = ex.series || '3x12';
         const observacao = ex.observacao || '';
+        // Campos novos do prompt aprimorado (opcionais, retrocompatíveis)
+        const carga_sugerida = ex.carga_sugerida || ex.carga || '';
+        const descanso_seg = parseInt(ex.descanso_seg || ex.descanso || 0) || 0;
+        const alternativa = ex.alternativa || '';
         let youtubeId = extrairYoutubeId(ex.youtubeId) || extrairYoutubeId(ex.youtube) || null;
         if (!youtubeId) youtubeId = buscarVideoYouTube(nome);
-        return { nome, series, youtubeId, observacao };
+        return { nome, series, youtubeId, observacao, carga_sugerida, descanso_seg, alternativa };
     }
 
     // =====================================================
@@ -3782,84 +3965,149 @@ ${exerciciosJaUsados.slice(0, 25).join(', ')}
 🏃 ATIVIDADES EXTRAS: ${atividades.slice(0, 5).map(a => `${a.tipo || a.nome} (${a.duracao}min)`).join(', ')}
 → Considere fadiga acumulada ao definir volume e intensidade.` : '';
 
-            const prompt = `Você é um personal trainer especialista. Analise TODOS os dados abaixo e crie um treino verdadeiramente personalizado.
+            // Calcula nº ideal de exercícios por treino baseado na duração
+            // Regra: aquecimento ~5min + (séries × ~3min com descanso) + alongamento 3min
+            // Pra duracao=45 → 6-7 ex; duracao=60 → 7-9 ex; duracao=30 → 4-5 ex
+            const duracaoNum = parseInt(duracao) || 60;
+            const exMin = Math.max(3, Math.round((duracaoNum - 8) / 7));
+            const exMax = Math.max(exMin + 1, Math.round((duracaoNum - 8) / 5));
 
-${observacoes ? `⭐ PREFERÊNCIAS PRIORITÁRIAS DO USUÁRIO (máxima prioridade — aplique antes de qualquer outra regra):
+            // Metodologia recomendada por objetivo (RPE = Rate of Perceived Exertion 0-10)
+            const metodologiaPorObjetivo = {
+                hipertrofia:   'séries 3-4, reps 8-12, RPE 7-9, descanso 60-90s, foco em volume e tempo sob tensão',
+                forca:         'séries 4-5, reps 3-6, RPE 8-9, descanso 2-3min, foco em carga progressiva',
+                emagrecimento: 'séries 3-4, reps 12-15, RPE 6-8, descanso 30-60s, circuitos e supersets bem-vindos',
+                resistencia:   'séries 2-3, reps 15-20, RPE 6-7, descanso 30-45s, ritmo controlado',
+                condicionamento: 'séries 3, reps 10-15, RPE 7, descanso 45-75s, mistura compostos+isolados',
+                manutencao:    'séries 3, reps 10-12, RPE 6-7, descanso 60s, equilíbrio entre grupos'
+            };
+            const metodologia = metodologiaPorObjetivo[objetivo] || metodologiaPorObjetivo.condicionamento;
+
+            const prompt = `Crie um plano de treino personalizado seguindo TODAS as regras abaixo. Pense passo a passo, mas retorne APENAS o JSON final.
+
+${observacoes ? `⭐⭐⭐ PEDIDO EXPLÍCITO DO USUÁRIO (PRIORIDADE MÁXIMA — APLIQUE LITERALMENTE):
 "${observacoes}"
-→ Isso é o que o usuário explicitamente pediu. Respeite integralmente. Se conflitar com sugestões técnicas, a preferência do usuário vence.
+→ Esta instrução vence qualquer outra regra técnica. Se o usuário pediu algo específico, faça exatamente isso.
 
-` : ''}━━━ PERFIL DO USUÁRIO ━━━
-Nome: ${perfil.nome || 'não informado'} | Idade: ${perfil.idade || 'não informada'}
-Objetivo: ${objetivo} | Nível: ${nivel}
-Foco/Ênfase: ${
-    focoTreino === 'superior'
-        ? 'ÊNFASE EM SUPERIOR — distribua mais volume/séries para peito, costas, ombros e braços. MAS inclua obrigatoriamente pelo menos 1 exercício de perna/glúteo por treino (ex: agachamento, leg press, stiff, afundo). Perna não pode ficar sem treino.'
-        : focoTreino === 'inferior'
-        ? 'ÊNFASE EM INFERIOR — distribua mais volume/séries para pernas e glúteos. MAS inclua obrigatoriamente pelo menos 1-2 exercícios de superior por treino (ex: supino, remada, desenvolvimento). Superior não pode ser ignorado.'
-        : 'CORPO TODO EQUILIBRADO — distribua volume de forma proporcional entre superior, inferior e core.'
+` : ''}━━━ PERFIL ━━━
+Nome: ${perfil.nome || 'aluno'} | Idade: ${perfil.idade || 'n/d'}
+Objetivo: ${objetivo} → metodologia: ${metodologia}
+Nível: ${nivel}
+Foco: ${
+    focoTreino === 'superior' ? 'ÊNFASE SUPERIOR (mais volume em peito/costas/ombros/braços; perna em dia dedicado)'
+    : focoTreino === 'inferior' ? 'ÊNFASE INFERIOR (mais volume em pernas/glúteos; superior em dia dedicado)'
+    : 'CORPO TODO EQUILIBRADO (volume proporcional entre superior, inferior e core)'
 }
-Frequência desejada: ${frequencia}x/semana | Duração: ${duracao} minutos
-Equipamentos: ${equipamentos.join(', ')}
-${outrasAtividades === 'sim' ? `Outras atividades: ${detalhesAtividades}` : ''}
-${restricoes ? `Restrições/Lesões (respeitar obrigatoriamente): ${restricoes}` : ''}
+Frequência: ${frequencia}x/semana | Duração-alvo: ${duracaoNum}min/sessão
+Equipamentos disponíveis: ${equipamentos.join(', ')}
+${outrasAtividades === 'sim' && detalhesAtividades ? `Atividades extras: ${detalhesAtividades} (considerar fadiga acumulada)` : ''}
+${restricoes ? `🚫 RESTRIÇÕES/LESÕES (NUNCA prescrever exercícios contraindicados): ${restricoes}` : ''}
 
-━━━ DADOS BIOLÓGICOS E DE SAÚDE ━━━
+━━━ DADOS DE SAÚDE ━━━
 ${contextoBio}
 ${contextoExames}
 ${contextoScanner}
 
-━━━ HISTÓRICO DE TREINO REAL ━━━
+━━━ HISTÓRICO REAL ━━━
 ${contextoHistorico}
 ${contextoExerciciosAntigos}
 ${contextoAtividades}
 
-━━━ INSTRUÇÃO DE VARIAÇÃO (CRÍTICO) ━━━
-SEED DE VARIAÇÃO: ${seed}
-Este é um NOVO treino gerado em ${new Date().toLocaleString('pt-BR')}.
-É PROIBIDO repetir a mesma sequência de exercícios de treinos anteriores.
-Crie uma combinação NOVA e DIFERENTE, ajustada ao contexto acima.
-Ajuste séries/reps baseado nos dados biológicos (ex: mais volume se massa muscular baixa, menos intensidade se exame alterado, etc).
-
-━━━ REGRAS DE DIVISÃO DOS TREINOS — LEIA COM ATENÇÃO ━━━
-Você vai criar exatamente ${frequencia} treino(s). Distribua assim:
-
+━━━ DIVISÃO OBRIGATÓRIA DA SEMANA ━━━
 ${focoTreino === 'superior' ? `
-ÊNFASE EM SUPERIOR — divisão correta para ${frequencia} treino(s)/semana:
-- A MAIORIA dos treinos (${Math.max(1, parseInt(frequencia) - 1)} treinos) deve ser EXCLUSIVAMENTE de membros superiores: peito, costas, ombros, braços. SEM perna nesses treinos.
-- APENAS 1 treino da semana deve ser DEDICADO a pernas/glúteos (agachamento, leg press, stiff, afundo, extensora, flexora, panturrilha, glúteos).
-- Exemplo correto para ${frequencia}x/semana: ${_exemploDivisaoSuperior(parseInt(frequencia))}
-- ERRADO: colocar 1 exercício de perna em cada treino. CERTO: 1 dia inteiro dedicado a perna.
+SPLIT ÊNFASE SUPERIOR (${frequencia} treinos):
+- ${Math.max(1, parseInt(frequencia) - 1)} treino(s) DEDICADOS a superior (sem perna alguma).
+- 1 treino DEDICADO a perna (sem superior algum).
+- Exemplo válido: ${_exemploDivisaoSuperior(parseInt(frequencia))}
+- ❌ ERRADO: 1 exercício de perna por treino. ✅ CERTO: 1 dia inteiro de perna.
 ` : focoTreino === 'inferior' ? `
-ÊNFASE EM INFERIOR — divisão correta para ${frequencia} treino(s)/semana:
-- A MAIORIA dos treinos (${Math.max(1, parseInt(frequencia) - 1)} treinos) deve ser EXCLUSIVAMENTE de membros inferiores: pernas, glúteos, panturrilha. SEM superior nesses treinos.
-- APENAS 1 treino da semana deve ser DEDICADO a membros superiores (supino, remada, desenvolvimento, puxada, rosca, tríceps).
-- Exemplo correto para ${frequencia}x/semana: ${_exemploDivisaoInferior(parseInt(frequencia))}
-- ERRADO: colocar 1 exercício de superior em cada treino. CERTO: 1 dia inteiro dedicado a superior.
+SPLIT ÊNFASE INFERIOR (${frequencia} treinos):
+- ${Math.max(1, parseInt(frequencia) - 1)} treino(s) DEDICADOS a inferior (sem superior algum).
+- 1 treino DEDICADO a superior (sem perna algum).
+- Exemplo válido: ${_exemploDivisaoInferior(parseInt(frequencia))}
+- ❌ ERRADO: 1 exercício de superior por treino. ✅ CERTO: 1 dia inteiro de superior.
 ` : `
-CORPO TODO EQUILIBRADO — cada treino deve ter exercícios de superior, inferior e core de forma equilibrada.
+SPLIT EQUILIBRADO (${frequencia} treinos): cada sessão mistura superior + inferior + core de forma proporcional. Pode usar full-body ou upper/lower alternado.
 `}
 
-━━━ FORMATO DE SAÍDA ━━━
-RETORNE APENAS JSON válido — sem texto antes ou depois:
-[{
-  "nome": "Treino A - [Nome descritivo]",
-  "foco": "${focoTreino}",
-  "justificativa": "Explique o papel deste treino na divisão semanal (ex: 'Treino focado em peito e tríceps, parte do split de ênfase superior')",
-  "exercicios": [
-    { "nome": "Nome do Exercício", "series": "4x10-12", "observacao": "Dica técnica" }
-  ]
-}]
+━━━ REGRAS DE QUALIDADE DOS EXERCÍCIOS ━━━
+1. Cada treino DEVE ter entre ${exMin} e ${exMax} exercícios (compatível com ${duracaoNum}min).
+2. SEMPRE comece o treino com 1 exercício COMPOSTO multiarticular (agachamento, supino, remada, terra, desenvolvimento, etc) e depois isolados.
+3. Use SOMENTE exercícios reais e consagrados — nada de nomes inventados.
+4. Equipamentos: use APENAS o que está listado em "Equipamentos disponíveis". Se só tem halteres, NÃO prescreva máquinas.
+5. Variação: NÃO repita os exercícios já listados na seção "EXERCÍCIOS JÁ EXISTENTES". Use variantes (Supino Reto → Supino Inclinado, Rosca Direta → Rosca Martelo).
+6. Restrições: se houver lesão, EVITE TOTALMENTE o movimento contraindicado e ofereça alternativa segura.
+7. Para CADA exercício, forneça:
+   - "nome": nome consagrado em português (ex: "Supino Inclinado com Halteres")
+   - "series": formato "AxR-R" (ex: "4x8-10") seguindo a metodologia do objetivo
+   - "carga_sugerida": orientação prática (ex: "RPE 8 — última rep difícil mas com forma perfeita")
+   - "descanso_seg": número inteiro em segundos (ex: 60, 90, 120)
+   - "observacao": dica técnica curta e útil (1 frase, foco em execução/erro comum/respiração)
+   - "alternativa": exercício substituto se o aluno não conseguir fazer o principal
 
-Crie exatamente ${frequencia} treino(s) diferentes. NÃO INCLUA LINKS DO YOUTUBE.`;
+━━━ VARIAÇÃO ━━━
+SEED: ${seed} | Timestamp: ${new Date().toLocaleString('pt-BR')}
+Gere combinação NOVA, diferente das anteriores. Ajuste volume/intensidade aos dados biológicos.
+
+━━━ FORMATO DE SAÍDA — JSON ESTRITO ━━━
+Retorne EXATAMENTE este formato (sem markdown, sem texto antes/depois):
+
+{
+  "treinos": [
+    {
+      "nome": "Treino A - Peito e Tríceps",
+      "foco": "${focoTreino}",
+      "grupos_musculares": ["peito", "tríceps"],
+      "justificativa": "Explique em 1-2 frases o papel deste treino dentro do split semanal e por que esses exercícios.",
+      "aquecimento": "5min de mobilidade de ombro + 1 série leve do primeiro exercício",
+      "exercicios": [
+        {
+          "nome": "Supino Reto com Barra",
+          "series": "4x8-10",
+          "carga_sugerida": "RPE 8 — peso que permite completar com forma perfeita",
+          "descanso_seg": 90,
+          "observacao": "Mantenha escápulas retraídas, não bata a barra no peito.",
+          "alternativa": "Supino com Halteres se sentir desconforto no ombro"
+        }
+      ],
+      "alongamento": "3min de alongamento estático focado em peito e tríceps"
+    }
+  ]
+}
+
+Exemplo de exercício BEM feito (use como referência de qualidade):
+{
+  "nome": "Agachamento Livre",
+  "series": "4x6-8",
+  "carga_sugerida": "RPE 8-9, ~75-80% 1RM",
+  "descanso_seg": 120,
+  "observacao": "Desça até a coxa paralela ao chão, joelhos alinhados com os pés, peito erguido.",
+  "alternativa": "Hack Squat ou Leg Press se houver desconforto lombar"
+}
+
+Crie EXATAMENTE ${frequencia} treino(s). NÃO inclua links, NÃO use markdown, NÃO escreva nada fora do JSON.`;
 
             let resposta, treinos;
             let tentativas = 0;
             while (tentativas < 3) {
                 resposta = await callIA(prompt, 'treino');
                 try {
-                    const jsonMatch = resposta.match(/\[[\s\S]*\]/);
-                    if (!jsonMatch) throw new Error('JSON não encontrado');
-                    treinos = JSON.parse(jsonMatch[0]);
+                    // Suporta tanto formato novo {"treinos":[...]} quanto array antigo [...]
+                    let parsed;
+                    const objMatch = resposta.match(/\{[\s\S]*\}/);
+                    const arrMatch = resposta.match(/\[[\s\S]*\]/);
+                    if (objMatch) {
+                        try {
+                            const obj = JSON.parse(objMatch[0]);
+                            if (Array.isArray(obj.treinos)) parsed = obj.treinos;
+                            else if (Array.isArray(obj)) parsed = obj;
+                        } catch(e) {}
+                    }
+                    if (!parsed && arrMatch) {
+                        parsed = JSON.parse(arrMatch[0]);
+                    }
+                    if (!parsed) throw new Error('JSON não encontrado');
+                    treinos = parsed;
                     if (!Array.isArray(treinos) || treinos.length === 0) throw new Error('Array vazio');
 
                     // ── VALIDAÇÃO: verifica se a divisão semanal está correta ──
@@ -3912,6 +4160,9 @@ Crie exatamente ${frequencia} treino(s) diferentes. NÃO INCLUA LINKS DO YOUTUBE
                     nome: treino.nome,
                     foco: treino.foco || focoTreino,
                     justificativa: treino.justificativa || '',
+                    aquecimento: treino.aquecimento || '',
+                    alongamento: treino.alongamento || '',
+                    grupos_musculares: treino.grupos_musculares || [],
                     exercicios: treino.exercicios,
                     tipo: 'IA',
                     dataCriacao: agora,
@@ -4122,25 +4373,40 @@ function renderTreino(treino) {
     const exHtml = exercicios.map((ex, idx) => {
         const done = treino.progresso && treino.progresso[idx];
         const ytUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(ex.nome + ' execução correta')}`;
+        const cargaHtml = ex.carga_sugerida ? `<div class="ex-carga">🏋️ ${ex.carga_sugerida}</div>` : '';
+        const descansoHtml = ex.descanso_seg ? `<span class="ex-descanso-pill">⏸ ${ex.descanso_seg}s</span>` : '';
+        const altHtml = ex.alternativa ? `<div class="ex-alt">↔ Alt.: ${ex.alternativa}</div>` : '';
+        // Usa descanso sugerido pelo exercício (se houver) ao iniciar timer
+        const restArg = ex.descanso_seg ? `, ${ex.descanso_seg}` : '';
         return `
         <div class="ex-row ${done ? 'done' : ''}" id="exrow_${treino.id}_${idx}">
             <div class="ex-info">
                 <div class="ex-nome ${done ? 'done' : ''}">${ex.nome}</div>
-                <div class="ex-series">${ex.series}</div>
+                <div class="ex-series">${ex.series} ${descansoHtml}</div>
+                ${cargaHtml}
                 ${ex.observacao ? `<div class="ex-obs">💡 ${ex.observacao}</div>` : ''}
+                ${altHtml}
             </div>
             <div class="ex-actions">
                 <a href="${ytUrl}" target="_blank" rel="noopener noreferrer" class="ex-yt-btn" title="Ver no YouTube">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="#FF0000"><polygon points="5,3 19,12 5,21"></polygon></svg>
                 </a>
                 <button class="ex-rest-btn" id="restBtn_${treino.id}_${idx}"
-                        onclick="iniciarRestTimer(${treino.id}, ${idx}, '${ex.nome.replace(/'/g,"\\'")}')"
+                        onclick="iniciarRestTimer(${treino.id}, ${idx}, '${ex.nome.replace(/'/g,"\\'")}'${restArg})"
                         title="Iniciar descanso">⏱️</button>
                 <button class="ex-del-btn" onclick="deleteExercicio(${treino.id}, ${idx}, '${ex.nome.replace(/'/g, "\\'")}')">🗑</button>
                 <div class="ex-check-btn ${done ? 'checked' : ''}" onclick="toggleExercicio(${treino.id}, ${idx})">${done ? '✓' : ''}</div>
             </div>
         </div>`;
     }).join('');
+
+    // Aquecimento e alongamento (só aparecem se a IA preencheu)
+    const warmupHtml = treino.aquecimento
+        ? `<div class="treino-warm-cool warmup">🔥 <strong>Aquecimento:</strong> ${treino.aquecimento}</div>` : '';
+    const cooldownHtml = treino.alongamento
+        ? `<div class="treino-warm-cool cooldown">🧘 <strong>Alongamento:</strong> ${treino.alongamento}</div>` : '';
+    const gruposHtml = (treino.grupos_musculares && treino.grupos_musculares.length)
+        ? `<div class="treino-grupos">${treino.grupos_musculares.map(g => `<span class="grupo-pill">${g}</span>`).join('')}</div>` : '';
 
     return `
     <div class="treino-item-card" id="treino-${treino.id}">
@@ -4153,7 +4419,7 @@ function renderTreino(treino) {
             <div class="treino-item-progress-bar-fill" style="width:${pct}%"></div>
         </div>
         <div class="treino-item-body" id="treino-content-${treino.id}">
-            ${restConfigHtml}${justHtml}${exHtml}
+            ${restConfigHtml}${justHtml}${gruposHtml}${warmupHtml}${exHtml}${cooldownHtml}
             ${getHistoricoTreinoDia(treino.id)}
             <div class="treino-item-controls">
                 <button class="btn btn-success" onclick="iniciarCronometro(${treino.id}, '${treino.nome.replace(/'/g, "\\'")}')">
@@ -6116,14 +6382,164 @@ Use emojis, seja específico com números e seja muito motivador!`;
 
     // =====================================================
     // REST TIMER (descanso entre séries)
+    // -----------------------------------------------------
+    // Estratégia: timestamp absoluto (Date.now()) em vez de
+    // contador decrescente. Assim o tempo NUNCA "perde" mesmo
+    // quando o usuário sai da aba, bloqueia a tela ou abre
+    // outro app — quando volta, recalcula o restante real.
+    //
+    // Recursos extras:
+    //  - Wake Lock: mantém a tela acesa durante o descanso
+    //  - Bipes pré-agendados via Web Audio (tocam mesmo se
+    //    o JS for suspenso, desde que o AudioContext esteja vivo)
+    //  - Vibração no aviso prévio (3s antes) e no fim
+    //  - Tick a cada 250ms pra UI suave + visibilitychange
+    //    força refresh imediato ao voltar pro app
     // =====================================================
     let _restInterval = null;
-    let _restAtivo = false;
+    let _restAtivo    = false;
     let _restBtnAtual = null;
+    let _restEndTime  = 0;       // timestamp absoluto do fim
+    let _restTotal    = 0;       // duração total em segundos
+    let _restAviso3s  = false;   // já vibrou aviso prévio?
+    let _restWakeLock = null;    // referência do Wake Lock
+    let _restAudioCtx = null;    // AudioContext reutilizável
+    let _restBeepNodes = [];     // osciladores agendados (pra cancelar)
+    let _restAudioKeepalive = null; // <audio> silencioso pra manter sessão de áudio viva no iOS
 
-    function iniciarRestTimer(treinoId, exIdx, exNome) {
+    async function _adquirirWakeLock() {
+        try {
+            if ('wakeLock' in navigator && document.visibilityState === 'visible') {
+                _restWakeLock = await navigator.wakeLock.request('screen');
+                _restWakeLock.addEventListener?.('release', () => { _restWakeLock = null; });
+            }
+        } catch(e) { /* sem permissão / não suportado */ }
+    }
+    function _liberarWakeLock() {
+        if (_restWakeLock) {
+            try { _restWakeLock.release(); } catch(e) {}
+            _restWakeLock = null;
+        }
+    }
+    // Re-adquire wake lock se a aba voltar do background com timer rodando
+    document.addEventListener('visibilitychange', () => {
+        if (_restAtivo && document.visibilityState === 'visible' && !_restWakeLock) {
+            _adquirirWakeLock();
+        }
+        // Atualiza UI imediatamente ao voltar (tempo pode ter mudado muito)
+        if (_restAtivo && document.visibilityState === 'visible' && _restInterval) {
+            _restTickAtual && _restTickAtual();
+        }
+    });
+
+    let _restTickAtual = null; // referência do callback atual pra refresh
+
+    function _ensureAudioCtx() {
+        try {
+            if (!_restAudioCtx) {
+                _restAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            // iOS suspende o ctx se não houver atividade — resume aqui (chamada veio de user gesture)
+            if (_restAudioCtx.state === 'suspended') {
+                _restAudioCtx.resume().catch(()=>{});
+            }
+        } catch(e) {}
+        return _restAudioCtx;
+    }
+
+    // Mantém a sessão de áudio do iOS viva durante o descanso.
+    // Estratégia dupla:
+    //  1) <audio> tocando WAV silencioso em loop — sinaliza pro iOS que a página
+    //     tem áudio ativo (evita suspender AudioContext quando tela bloqueia)
+    //  2) Oscilador silencioso no AudioContext — mantém o ctx ativo
+    // Ambos são criados a partir do user gesture (clique no botão de iniciar timer).
+    function _iniciarAudioKeepalive() {
+        try {
+            if (_restAudioKeepalive) return;
+            // WAV silencioso ~0.5s (44.1kHz, mono, 16-bit, ~22k samples zerados)
+            // Geramos em runtime pra evitar data URL gigante no HTML
+            const sampleRate = 44100;
+            const seconds = 0.5;
+            const samples = Math.floor(sampleRate * seconds);
+            const buffer = new ArrayBuffer(44 + samples * 2);
+            const view = new DataView(buffer);
+            // RIFF header
+            const writeString = (off, str) => { for (let i=0; i<str.length; i++) view.setUint8(off+i, str.charCodeAt(i)); };
+            writeString(0, 'RIFF');
+            view.setUint32(4, 36 + samples * 2, true);
+            writeString(8, 'WAVE');
+            writeString(12, 'fmt ');
+            view.setUint32(16, 16, true);   // chunk size
+            view.setUint16(20, 1, true);    // PCM
+            view.setUint16(22, 1, true);    // mono
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * 2, true);
+            view.setUint16(32, 2, true);    // block align
+            view.setUint16(34, 16, true);   // bits per sample
+            writeString(36, 'data');
+            view.setUint32(40, samples * 2, true);
+            // Samples já são 0 (silêncio)
+            const blob = new Blob([buffer], { type: 'audio/wav' });
+            _restAudioKeepalive = new Audio(URL.createObjectURL(blob));
+            _restAudioKeepalive.loop = true;
+            _restAudioKeepalive.volume = 0.001; // praticamente mudo, mas iOS reconhece como "tocando"
+            _restAudioKeepalive.play().catch(()=>{ /* sem permissão = ok, segue só com AudioContext */ });
+        } catch(e) {}
+    }
+    function _pararAudioKeepalive() {
+        if (_restAudioKeepalive) {
+            try {
+                _restAudioKeepalive.pause();
+                if (_restAudioKeepalive.src.startsWith('blob:')) URL.revokeObjectURL(_restAudioKeepalive.src);
+                _restAudioKeepalive.src = '';
+            } catch(e) {}
+            _restAudioKeepalive = null;
+        }
+    }
+
+    // Agenda os bipes finais usando tempo absoluto do AudioContext.
+    // Mesmo se o JS for engasgado/suspenso, o áudio já está na fila do hardware.
+    function _agendarBeepFim(segundosRestantes) {
+        const ctx = _ensureAudioCtx();
+        if (!ctx) return;
+        // Limpa qualquer agendamento anterior
+        _cancelarBeepAgendado();
+        const startAt = ctx.currentTime + Math.max(0, segundosRestantes);
+        // 4 tons crescentes, cada um mais alto e mais longo que o anterior
+        // Volume alto (0.6) pra ouvir bem no fone e em ambiente barulhento
+        const tons = [
+            { freq: 880,  dur: 0.18, gain: 0.45, delay: 0.00 },
+            { freq: 1100, dur: 0.18, gain: 0.55, delay: 0.22 },
+            { freq: 1320, dur: 0.32, gain: 0.65, delay: 0.44 },
+            { freq: 1760, dur: 0.45, gain: 0.70, delay: 0.80 },
+        ];
+        tons.forEach(t => {
+            try {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain); gain.connect(ctx.destination);
+                osc.frequency.value = t.freq;
+                osc.type = 'sine';
+                const t0 = startAt + t.delay;
+                gain.gain.setValueAtTime(0.001, t0);
+                gain.gain.exponentialRampToValueAtTime(t.gain, t0 + 0.02);
+                gain.gain.setValueAtTime(t.gain, t0 + t.dur - 0.05);
+                gain.gain.exponentialRampToValueAtTime(0.001, t0 + t.dur);
+                osc.start(t0);
+                osc.stop(t0 + t.dur + 0.05);
+                _restBeepNodes.push(osc);
+            } catch(e) {}
+        });
+    }
+    function _cancelarBeepAgendado() {
+        _restBeepNodes.forEach(n => { try { n.stop(); } catch(e) {} });
+        _restBeepNodes = [];
+    }
+
+    function iniciarRestTimer(treinoId, exIdx, exNome, segundosOverride) {
         const input = document.getElementById(`restInput_${treinoId}`);
-        const segundos = parseInt(input ? input.value : 60) || 60;
+        // Prioridade: override do exercício (vindo da IA) > input do usuário > 60s default
+        const segundos = parseInt(segundosOverride) || parseInt(input ? input.value : 60) || 60;
         const btn = document.getElementById(`restBtn_${treinoId}_${exIdx}`);
 
         // Se já está rodando para este botão, cancela
@@ -6135,24 +6551,32 @@ Use emojis, seja específico com números e seja muito motivador!`;
         // Cancela qualquer timer anterior
         cancelarRestTimer();
 
-        _restAtivo = true;
+        _restAtivo    = true;
         _restBtnAtual = btn;
+        _restTotal    = segundos;
+        _restEndTime  = Date.now() + segundos * 1000;
+        _restAviso3s  = false;
         if (btn) btn.classList.add('running');
 
-        let restante = segundos;
-        const total = segundos;
+        // Mantém tela acesa + áudio vivo (essencial pra iOS PWA)
+        _adquirirWakeLock();
+        _ensureAudioCtx();
+        _iniciarAudioKeepalive();
+        // Pré-agenda o bipe final no hardware de áudio — toca mesmo se o JS atrasar
+        _agendarBeepFim(segundos);
 
-        const float = document.getElementById('restTimerFloat');
+        const float   = document.getElementById('restTimerFloat');
         const display = document.getElementById('rtDisplay');
-        const bar = document.getElementById('rtBar');
-        const nomeEl = document.getElementById('rtExNome');
+        const bar     = document.getElementById('rtBar');
+        const nomeEl  = document.getElementById('rtExNome');
 
         float.classList.add('active');
         nomeEl.textContent = exNome;
 
         function atualizar() {
+            const restante = Math.max(0, Math.ceil((_restEndTime - Date.now()) / 1000));
             display.textContent = restante;
-            bar.style.width = (restante / total * 100) + '%';
+            bar.style.width = (restante / _restTotal * 100) + '%';
             // Muda cor conforme tempo passa
             if (restante <= 10) {
                 bar.style.background = '#EF4444';
@@ -6164,50 +6588,64 @@ Use emojis, seja específico com números e seja muito motivador!`;
                 bar.style.background = 'var(--warning)';
                 display.style.color = 'var(--warning)';
             }
+            // Aviso prévio: vibração curta a 3s do fim
+            if (restante <= 3 && restante > 0 && !_restAviso3s) {
+                _restAviso3s = true;
+                if (navigator.vibrate) navigator.vibrate([60, 60, 60, 60, 60]);
+            }
+            if (restante <= 0) {
+                _finalizarRestTimer();
+            }
         }
+        _restTickAtual = atualizar;
 
         atualizar();
-
-        _restInterval = setInterval(() => {
-            restante--;
-            atualizar();
-            if (restante <= 0) {
-                clearInterval(_restInterval);
-                _restAtivo = false;
-                if (_restBtnAtual) _restBtnAtual.classList.remove('running');
-                float.classList.remove('active');
-                // Vibra se disponível
-                if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-                // Som de fim
-                _beepFim();
-                notify('✅ Descanso concluído! Próxima série! 💪');
-            }
-        }, 1000);
+        // Tick rápido (250ms) pra UI fluida e detecção precisa do fim
+        _restInterval = setInterval(atualizar, 250);
     }
 
-    function cancelarRestTimer() {
+    function _finalizarRestTimer() {
         if (_restInterval) clearInterval(_restInterval);
+        _restInterval = null;
+        if (!_restAtivo) return;
         _restAtivo = false;
         if (_restBtnAtual) _restBtnAtual.classList.remove('running');
         _restBtnAtual = null;
         const float = document.getElementById('restTimerFloat');
         if (float) float.classList.remove('active');
+        // Vibração forte no fim (padrão chamativo)
+        if (navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 500]);
+        // O bipe já foi pré-agendado no início — não precisa tocar de novo aqui
+        notify('✅ Descanso concluído! Próxima série! 💪');
+        _liberarWakeLock();
+        // Mantém audio keepalive por mais 2s pra garantir que o bipe terminou,
+        // depois libera pra economizar bateria
+        setTimeout(_pararAudioKeepalive, 2500);
     }
 
+    function cancelarRestTimer() {
+        if (_restInterval) clearInterval(_restInterval);
+        _restInterval = null;
+        _restAtivo    = false;
+        _restEndTime  = 0;
+        _restTotal    = 0;
+        _restAviso3s  = false;
+        _restTickAtual = null;
+        if (_restBtnAtual) _restBtnAtual.classList.remove('running');
+        _restBtnAtual = null;
+        const float = document.getElementById('restTimerFloat');
+        if (float) float.classList.remove('active');
+        _cancelarBeepAgendado();
+        _liberarWakeLock();
+        _pararAudioKeepalive();
+    }
+
+    // Mantido pra compat. com chamadas antigas (caso existam externamente)
     function _beepFim() {
         try {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            [880, 1100, 1320].forEach((freq, i) => {
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.connect(gain); gain.connect(ctx.destination);
-                osc.frequency.value = freq;
-                osc.type = 'sine';
-                gain.gain.setValueAtTime(0.3, ctx.currentTime + i * 0.18);
-                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.18 + 0.25);
-                osc.start(ctx.currentTime + i * 0.18);
-                osc.stop(ctx.currentTime + i * 0.18 + 0.25);
-            });
+            const ctx = _ensureAudioCtx();
+            if (!ctx) return;
+            _agendarBeepFim(0);
         } catch(e) {}
     }
 
