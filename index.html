@@ -2366,6 +2366,250 @@ header {
     }
 }
 
+/* =====================================================
+   WIZARD DE CRIAÇÃO DE TREINO
+   ===================================================== */
+
+.wizard-steps {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin: 0 0 1.5rem 0;
+    padding: 0 0.25rem;
+    position: relative;
+}
+.wizard-steps::before {
+    content: '';
+    position: absolute;
+    top: 14px;
+    left: 8%;
+    right: 8%;
+    height: 2px;
+    background: rgba(255,255,255,0.08);
+    z-index: 0;
+}
+.wizard-step-dot {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+    z-index: 1;
+    position: relative;
+}
+.wizard-step-dot span {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--dark-lighter);
+    border: 2px solid rgba(255,255,255,0.15);
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+    transition: all 0.25s;
+}
+.wizard-step-dot label {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    text-align: center;
+}
+.wizard-step-dot.active span {
+    background: var(--gradient-1);
+    border-color: var(--primary);
+    color: var(--dark);
+    transform: scale(1.1);
+}
+.wizard-step-dot.active label { color: var(--primary); }
+.wizard-step-dot.done span {
+    background: rgba(0,217,177,0.25);
+    border-color: var(--primary);
+    color: var(--primary);
+}
+.wizard-step-dot.done span::after { content: '✓'; }
+.wizard-step-dot.done span > span:first-child { display: none; }
+
+.wizard-page {
+    display: none;
+    animation: wizardFadeIn 0.25s ease-out;
+}
+.wizard-page.active { display: block; }
+@keyframes wizardFadeIn {
+    from { opacity: 0; transform: translateX(8px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+.wizard-page-title {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 1.15rem;
+    color: var(--text);
+    margin-bottom: 0.25rem;
+    line-height: 1.3;
+}
+.wizard-page-sub {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin-bottom: 1.25rem;
+    line-height: 1.45;
+}
+
+.muted {
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    margin-top: 0.35rem;
+    display: block;
+    line-height: 1.4;
+}
+
+/* Chips: substitui dropdowns por opções tappáveis estilo iOS */
+.chip-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+}
+.chip {
+    background: var(--dark-lighter);
+    color: var(--text);
+    border: 1.5px solid rgba(255,255,255,0.1);
+    border-radius: 999px;
+    padding: 0.6rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.18s ease-out;
+    font-family: inherit;
+    min-height: 40px;
+    -webkit-tap-highlight-color: transparent;
+}
+.chip:active { transform: scale(0.95); }
+.chip.selected {
+    background: var(--gradient-1);
+    color: var(--dark);
+    border-color: var(--primary);
+    box-shadow: 0 2px 12px rgba(0,217,177,0.25);
+}
+.chip.dor.selected {
+    background: rgba(239,68,68,0.85);
+    color: white;
+    border-color: var(--error);
+    box-shadow: 0 2px 12px rgba(239,68,68,0.3);
+}
+
+/* Resumo final no passo 5 */
+.wizard-resumo {
+    background: rgba(0,217,177,0.06);
+    border: 1px solid rgba(0,217,177,0.2);
+    border-radius: 14px;
+    padding: 1rem 1.1rem;
+    margin-top: 0.75rem;
+    font-size: 0.82rem;
+    line-height: 1.5;
+    color: var(--text);
+}
+.wizard-resumo strong { color: var(--primary); }
+.wizard-resumo .resumo-linha {
+    padding: 0.35rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.wizard-resumo .resumo-linha:last-child { border-bottom: none; }
+
+/* Navegação do wizard */
+.wizard-nav {
+    display: flex;
+    gap: 0.6rem;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255,255,255,0.06);
+}
+.wizard-nav .btn {
+    flex: 1;
+    min-height: 50px;
+}
+.wizard-back {
+    background: rgba(255,255,255,0.08);
+    color: var(--text);
+    flex: 0 0 auto;
+    min-width: 100px;
+}
+
+/* =====================================================
+   POLIMENTO VISUAL — header e nav mais "app-like"
+   ===================================================== */
+
+/* Header mais clean */
+.header-content {
+    padding: 0.6rem 1rem !important;
+}
+.header-content > div:not(.logo) {
+    display: none !important; /* tira o "AI Powered" */
+}
+.logo {
+    font-size: 1.1rem !important;
+    letter-spacing: -0.02em;
+}
+
+/* Nav tabs com snap suave + visual mais consistente */
+.nav-tabs {
+    scroll-snap-type: x proximity;
+    padding: 0.45rem 0.5rem !important;
+    gap: 0.3rem !important;
+}
+.nav-tab {
+    scroll-snap-align: start;
+    border-radius: 12px !important;
+    transition: background 0.2s, color 0.2s, transform 0.08s !important;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+.nav-tab.active {
+    box-shadow: 0 2px 10px rgba(0,217,177,0.18);
+}
+
+/* Cards do dashboard com hierarquia mais clara */
+.stat-card {
+    border-radius: 18px;
+    transition: transform 0.12s, background 0.2s;
+}
+.stat-card:active { transform: scale(0.97); }
+
+/* Espaçamento mais generoso entre seções */
+.section { padding-bottom: 3rem; }
+
+/* Modais mais "app-like" no mobile: sobe do bottom */
+@media (max-width: 768px) {
+    .modal {
+        align-items: flex-end !important;
+        padding: 0 !important;
+    }
+    .modal-content {
+        max-width: 100%;
+        max-height: 95vh;
+        border-radius: 24px 24px 0 0;
+        margin: 0;
+        animation: modalSlideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+    }
+    @keyframes modalSlideUp {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
+    }
+    /* Handle visual estilo iOS */
+    .modal-content::before {
+        content: '';
+        display: block;
+        width: 40px;
+        height: 4px;
+        background: rgba(255,255,255,0.2);
+        border-radius: 2px;
+        margin: 0 auto 1rem;
+    }
+}
+
     </style>
 </head>
 <body>
@@ -2893,104 +3137,321 @@ header {
         </section>
     </div>
 
-    <!-- MODAL: GERAR TREINO COM IA -->
+    <!-- MODAL: GERAR TREINO COM IA (WIZARD) -->
     <div id="gerarTreinoModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 class="modal-title">🤖 Gerar Treino com IA</h3>
+                <h3 class="modal-title">🤖 Novo Treino com IA</h3>
                 <button class="modal-close" onclick="closeModal('gerarTreinoModal')">×</button>
             </div>
+
+            <!-- Indicador de passos -->
+            <div class="wizard-steps">
+                <div class="wizard-step-dot active" data-step="1"><span>1</span><label>Objetivo</label></div>
+                <div class="wizard-step-dot" data-step="2"><span>2</span><label>Esporte</label></div>
+                <div class="wizard-step-dot" data-step="3"><span>3</span><label>Tempo</label></div>
+                <div class="wizard-step-dot" data-step="4"><span>4</span><label>Foco</label></div>
+                <div class="wizard-step-dot" data-step="5"><span>5</span><label>Pronto</label></div>
+            </div>
+
             <form onsubmit="gerarTreinoIA(event)" id="formGerarTreino">
-                <div class="form-grid">
+
+                <!-- ═══════ PASSO 1: OBJETIVO & ESTILO ═══════ -->
+                <div class="wizard-page active" data-page="1">
+                    <h4 class="wizard-page-title">O que você quer alcançar?</h4>
+                    <p class="wizard-page-sub">Vamos começar pelo essencial.</p>
+
                     <div class="form-group">
-                        <label>Objetivo Principal</label>
+                        <label>Objetivo principal</label>
                         <select id="objetivo" required onchange="updateRecommendations()">
                             <option value="">Selecione...</option>
-                            <option value="hipertrofia">Hipertrofia (Ganho de Massa)</option>
-                            <option value="emagrecimento">Emagrecimento (Perda de Peso)</option>
-                            <option value="definicao">Definição Muscular</option>
-                            <option value="forca">Ganho de Força</option>
-                            <option value="resistencia">Resistência</option>
-                            <option value="saude">Saúde Geral</option>
+                            <option value="hipertrofia">💪 Hipertrofia (ganho de massa)</option>
+                            <option value="emagrecimento">🔥 Emagrecimento</option>
+                            <option value="definicao">✨ Definição muscular</option>
+                            <option value="forca">🏋️ Ganho de força</option>
+                            <option value="resistencia">🏃 Resistência</option>
+                            <option value="condicionamento">⚡ Condicionamento geral</option>
+                            <option value="saude">❤️ Saúde geral</option>
                         </select>
                     </div>
+
                     <div class="form-group">
-                        <label>Nível de Experiência</label>
-                        <select id="nivel" required>
-                            <option value="">Selecione...</option>
-                            <option value="iniciante">Iniciante</option>
-                            <option value="intermediario">Intermediário</option>
-                            <option value="avancado">Avançado</option>
-                        </select>
+                        <label>Nível de experiência</label>
+                        <div class="chip-group" data-field="nivel">
+                            <button type="button" class="chip" data-value="iniciante">Iniciante (&lt;6 meses)</button>
+                            <button type="button" class="chip" data-value="intermediario">Intermediário (6m-2a)</button>
+                            <button type="button" class="chip" data-value="avancado">Avançado (2a+)</button>
+                        </div>
+                        <input type="hidden" id="nivel" required>
                         <div class="recommendation" id="recNivel"></div>
                     </div>
+
                     <div class="form-group">
-                        <label>Ênfase do Treino</label>
-                        <select id="focoTreino" required>
-                            <option value="">Selecione...</option>
-                            <option value="superior">Ênfase em Superior (+ volume superior, perna 1x/sem)</option>
-                            <option value="inferior">Ênfase em Inferior (+ volume perna, superior 1x/sem)</option>
-                            <option value="tudo">Corpo Todo (Full Body equilibrado)</option>
-                        </select>
-                        <small style="color:var(--text-muted);font-size:0.78rem;margin-top:0.25rem;display:block;">💡 "Ênfase" = mais volume no foco, mas o corpo todo é treinado!</small>
-                        <div class="recommendation" id="recFoco"></div>
+                        <label>Estilo de treino preferido</label>
+                        <div class="chip-group" data-field="estiloTreino">
+                            <button type="button" class="chip" data-value="convencional">Musculação clássica</button>
+                            <button type="button" class="chip" data-value="funcional">Funcional</button>
+                            <button type="button" class="chip" data-value="calistenia">Calistenia</button>
+                            <button type="button" class="chip" data-value="crossfit">CrossFit-style</button>
+                            <button type="button" class="chip" data-value="misto">Misto</button>
+                        </div>
+                        <input type="hidden" id="estiloTreino" value="convencional">
                     </div>
+
                     <div class="form-group">
-                        <label>Frequência Semanal</label>
-                        <select id="frequencia" required>
-                            <option value="">Selecione...</option>
-                            <option value="2">2x por semana</option>
-                            <option value="3">3x por semana</option>
-                            <option value="4">4x por semana</option>
-                            <option value="5">5x por semana</option>
-                            <option value="6">6x por semana</option>
-                        </select>
-                        <div class="recommendation" id="recFreq"></div>
-                    </div>
-                    <div class="form-group">
-                        <label>Duração do Treino</label>
-                        <select id="duracao" required>
-                            <option value="">Selecione...</option>
-                            <option value="30">30 minutos</option>
-                            <option value="45">45 minutos</option>
-                            <option value="60">60 minutos</option>
-                            <option value="90">90 minutos</option>
-                        </select>
-                        <div class="recommendation" id="recDuracao"></div>
-                    </div>
-                    <div class="form-group">
-                        <label>Equipamentos Disponíveis</label>
-                        <select id="equipamentos" required multiple size="5">
-                            <option value="peso_livre">Pesos Livres (Halteres, Barras)</option>
-                            <option value="maquinas">Máquinas</option>
-                            <option value="peso_corporal">Peso Corporal</option>
-                            <option value="elasticos">Elásticos/Bandas</option>
-                            <option value="kettlebell">Kettlebell</option>
-                        </select>
-                        <small style="color: var(--text-muted); font-size: 0.8rem;">Segure Ctrl/Cmd para selecionar múltiplos</small>
-                    </div>
-                    <div class="form-group">
-                        <label>Faz outras atividades físicas?</label>
-                        <select id="outrasAtividades" onchange="toggleOutrasAtividades()">
-                            <option value="nao">Não</option>
-                            <option value="sim">Sim</option>
-                        </select>
-                    </div>
-                    <div class="form-group" id="detalhesOutrasAtividades" style="display:none;">
-                        <label>Quais atividades e frequência?</label>
-                        <textarea id="detalhesAtividades" rows="3" placeholder="Ex: Futebol 2x/semana, Corrida 3x/semana"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label>Restrições ou Lesões</label>
-                        <textarea id="restricoes" rows="3" placeholder="Opcional: Descreva lesões ou limitações"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label>⭐ Observações / Preferências (alta prioridade)</label>
-                        <textarea id="observacoes" rows="3" placeholder="Ex: quero exercícios com halteres, sem agachamento livre, prefiro supino inclinado, incluir flexão de braço..."></textarea>
-                        <small style="color:#a78bfa;font-size:0.78rem;margin-top:0.25rem;display:block;">💡 O que você escrever aqui tem prioridade máxima sobre qualquer sugestão da IA.</small>
+                        <label>Energia/disposição atual</label>
+                        <div class="chip-group" data-field="energia">
+                            <button type="button" class="chip" data-value="alta">🔋 Alta</button>
+                            <button type="button" class="chip" data-value="media">⚡ Média</button>
+                            <button type="button" class="chip" data-value="baixa">😴 Baixa</button>
+                        </div>
+                        <input type="hidden" id="energia" value="media">
+                        <small class="muted">Influencia o volume inicial dos treinos.</small>
                     </div>
                 </div>
-                <button type="submit" class="btn btn-ai btn-block">🚀 Gerar Treino Personalizado</button>
+
+                <!-- ═══════ PASSO 2: ESPORTE / ATIVIDADE ESPECÍFICA ═══════ -->
+                <div class="wizard-page" data-page="2">
+                    <h4 class="wizard-page-title">Você pratica algum esporte?</h4>
+                    <p class="wizard-page-sub">Se sim, podemos incluir um dia DEDICADO ao seu esporte e ajustar os outros treinos pra complementar.</p>
+
+                    <div class="form-group">
+                        <label>Pratica esporte regularmente?</label>
+                        <div class="chip-group" data-field="praticaEsporte">
+                            <button type="button" class="chip" data-value="nao">Não</button>
+                            <button type="button" class="chip" data-value="sim">Sim</button>
+                        </div>
+                        <input type="hidden" id="praticaEsporte" value="nao">
+                    </div>
+
+                    <div id="esporteDetalhes" style="display:none;">
+                        <div class="form-group">
+                            <label>Qual esporte?</label>
+                            <input type="text" id="esporteNome" placeholder="Ex: Kitesurf, Surfe, Futebol, Escalada, Tênis, BJJ...">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Frequência semanal do esporte</label>
+                            <div class="chip-group" data-field="esporteFreq">
+                                <button type="button" class="chip" data-value="1">1x/sem</button>
+                                <button type="button" class="chip" data-value="2">2x/sem</button>
+                                <button type="button" class="chip" data-value="3">3x/sem</button>
+                                <button type="button" class="chip" data-value="4+">4+ x/sem</button>
+                            </div>
+                            <input type="hidden" id="esporteFreq" value="2">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Nível no esporte</label>
+                            <div class="chip-group" data-field="esporteNivel">
+                                <button type="button" class="chip" data-value="recreativo">Recreativo</button>
+                                <button type="button" class="chip" data-value="amador">Amador competitivo</button>
+                                <button type="button" class="chip" data-value="competitivo">Competitivo</button>
+                            </div>
+                            <input type="hidden" id="esporteNivel" value="recreativo">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Quero 1 dia DEDICADO ao meu esporte (treino funcional pro esporte)?</label>
+                            <div class="chip-group" data-field="esporteDiaDedicado">
+                                <button type="button" class="chip" data-value="nao">Não, só musculação clássica</button>
+                                <button type="button" class="chip" data-value="sim">Sim, quero 1 dia funcional</button>
+                            </div>
+                            <input type="hidden" id="esporteDiaDedicado" value="nao">
+                        </div>
+
+                        <div class="form-group" id="esporteFocoBlock" style="display:none;">
+                            <label>Foco do dia funcional pro esporte (selecione 1 ou +)</label>
+                            <div class="chip-group multi" data-field="esporteFoco" data-multi="true">
+                                <button type="button" class="chip" data-value="forca_explosiva">⚡ Força explosiva</button>
+                                <button type="button" class="chip" data-value="resistencia">🔋 Resistência</button>
+                                <button type="button" class="chip" data-value="core_estabilidade">🎯 Core/estabilidade</button>
+                                <button type="button" class="chip" data-value="mobilidade">🤸 Mobilidade</button>
+                                <button type="button" class="chip" data-value="equilibrio">⚖️ Equilíbrio</button>
+                                <button type="button" class="chip" data-value="potencia_pernas">🦵 Potência de pernas</button>
+                                <button type="button" class="chip" data-value="potencia_superior">💪 Potência superior</button>
+                            </div>
+                            <input type="hidden" id="esporteFoco" value="">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Os treinos da semana devem COMPLEMENTAR o esporte (evitar fadiga em grupos sobrecarregados)?</label>
+                            <div class="chip-group" data-field="esporteComplementar">
+                                <button type="button" class="chip" data-value="sim">Sim, considerar fadiga</button>
+                                <button type="button" class="chip" data-value="nao">Não, treinar normal</button>
+                            </div>
+                            <input type="hidden" id="esporteComplementar" value="sim">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ═══════ PASSO 3: TEMPO & EQUIPAMENTO ═══════ -->
+                <div class="wizard-page" data-page="3">
+                    <h4 class="wizard-page-title">Quando e onde você treina?</h4>
+                    <p class="wizard-page-sub">Pra IA criar um plano que cabe na sua rotina real.</p>
+
+                    <div class="form-group">
+                        <label>Frequência semanal</label>
+                        <div class="chip-group" data-field="frequencia">
+                            <button type="button" class="chip" data-value="2">2x</button>
+                            <button type="button" class="chip" data-value="3">3x</button>
+                            <button type="button" class="chip" data-value="4">4x</button>
+                            <button type="button" class="chip" data-value="5">5x</button>
+                            <button type="button" class="chip" data-value="6">6x</button>
+                        </div>
+                        <input type="hidden" id="frequencia" required>
+                        <div class="recommendation" id="recFreq"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Duração por sessão</label>
+                        <div class="chip-group" data-field="duracao">
+                            <button type="button" class="chip" data-value="30">30 min</button>
+                            <button type="button" class="chip" data-value="45">45 min</button>
+                            <button type="button" class="chip" data-value="60">60 min</button>
+                            <button type="button" class="chip" data-value="75">75 min</button>
+                            <button type="button" class="chip" data-value="90">90 min</button>
+                        </div>
+                        <input type="hidden" id="duracao" required>
+                        <div class="recommendation" id="recDuracao"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Dias da semana disponíveis (toque pra selecionar)</label>
+                        <div class="chip-group multi" data-field="diasSemana" data-multi="true">
+                            <button type="button" class="chip" data-value="seg">Seg</button>
+                            <button type="button" class="chip" data-value="ter">Ter</button>
+                            <button type="button" class="chip" data-value="qua">Qua</button>
+                            <button type="button" class="chip" data-value="qui">Qui</button>
+                            <button type="button" class="chip" data-value="sex">Sex</button>
+                            <button type="button" class="chip" data-value="sab">Sáb</button>
+                            <button type="button" class="chip" data-value="dom">Dom</button>
+                        </div>
+                        <input type="hidden" id="diasSemana" value="">
+                        <small class="muted">Opcional. Ajuda na sugestão de divisão semanal.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Onde treina?</label>
+                        <div class="chip-group" data-field="local">
+                            <button type="button" class="chip" data-value="academia">🏋️ Academia</button>
+                            <button type="button" class="chip" data-value="casa">🏠 Casa</button>
+                            <button type="button" class="chip" data-value="externo">🌳 Externo (parque/praia)</button>
+                            <button type="button" class="chip" data-value="misto">🔀 Misto</button>
+                        </div>
+                        <input type="hidden" id="local" value="academia">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Equipamentos disponíveis (toque pra selecionar)</label>
+                        <div class="chip-group multi" data-field="equipamentos" data-multi="true">
+                            <button type="button" class="chip" data-value="peso_livre">Pesos livres</button>
+                            <button type="button" class="chip" data-value="maquinas">Máquinas</button>
+                            <button type="button" class="chip" data-value="peso_corporal">Peso corporal</button>
+                            <button type="button" class="chip" data-value="elasticos">Elásticos</button>
+                            <button type="button" class="chip" data-value="kettlebell">Kettlebell</button>
+                            <button type="button" class="chip" data-value="trx">TRX/argolas</button>
+                            <button type="button" class="chip" data-value="cardio_eq">Esteira/bike/elíptico</button>
+                        </div>
+                        <input type="hidden" id="equipamentos" required value="">
+                    </div>
+                </div>
+
+                <!-- ═══════ PASSO 4: FOCO & RESTRIÇÕES ═══════ -->
+                <div class="wizard-page" data-page="4">
+                    <h4 class="wizard-page-title">Foco e cuidados</h4>
+                    <p class="wizard-page-sub">O que você quer trabalhar mais e o que precisamos evitar.</p>
+
+                    <div class="form-group">
+                        <label>Ênfase do treino</label>
+                        <div class="chip-group" data-field="focoTreino">
+                            <button type="button" class="chip" data-value="superior">+ Volume superior</button>
+                            <button type="button" class="chip" data-value="inferior">+ Volume inferior</button>
+                            <button type="button" class="chip" data-value="tudo">Equilibrado</button>
+                        </div>
+                        <input type="hidden" id="focoTreino" required>
+                        <small class="muted">"Ênfase" = mais volume no foco, mas o corpo todo é treinado.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Áreas prioritárias (selecione as que quer trabalhar mais)</label>
+                        <div class="chip-group multi" data-field="areasPrio" data-multi="true">
+                            <button type="button" class="chip" data-value="peito">Peito</button>
+                            <button type="button" class="chip" data-value="costas">Costas</button>
+                            <button type="button" class="chip" data-value="ombro">Ombro</button>
+                            <button type="button" class="chip" data-value="biceps">Bíceps</button>
+                            <button type="button" class="chip" data-value="triceps">Tríceps</button>
+                            <button type="button" class="chip" data-value="quad">Quadríceps</button>
+                            <button type="button" class="chip" data-value="posterior">Posterior</button>
+                            <button type="button" class="chip" data-value="gluteo">Glúteo</button>
+                            <button type="button" class="chip" data-value="panturrilha">Panturrilha</button>
+                            <button type="button" class="chip" data-value="abdome">Abdome/core</button>
+                            <button type="button" class="chip" data-value="cardio">Cardio</button>
+                            <button type="button" class="chip" data-value="mobilidade">Mobilidade</button>
+                        </div>
+                        <input type="hidden" id="areasPrio" value="">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Áreas com dor/desconforto atual (toque se houver)</label>
+                        <div class="chip-group multi" data-field="areasDor" data-multi="true">
+                            <button type="button" class="chip dor" data-value="ombro">Ombro</button>
+                            <button type="button" class="chip dor" data-value="cotovelo">Cotovelo</button>
+                            <button type="button" class="chip dor" data-value="pulso">Pulso</button>
+                            <button type="button" class="chip dor" data-value="lombar">Lombar</button>
+                            <button type="button" class="chip dor" data-value="cervical">Cervical</button>
+                            <button type="button" class="chip dor" data-value="joelho">Joelho</button>
+                            <button type="button" class="chip dor" data-value="quadril">Quadril</button>
+                            <button type="button" class="chip dor" data-value="tornozelo">Tornozelo</button>
+                        </div>
+                        <input type="hidden" id="areasDor" value="">
+                        <small class="muted">A IA vai EVITAR exercícios que sobrecarregam essas regiões.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Restrições / lesões (descreva se relevante)</label>
+                        <textarea id="restricoes" rows="3" placeholder="Ex: hérnia L5-S1, tendinite no manguito direito, condromalácia patelar..."></textarea>
+                    </div>
+                </div>
+
+                <!-- ═══════ PASSO 5: PERSONALIZAÇÃO FINAL ═══════ -->
+                <div class="wizard-page" data-page="5">
+                    <h4 class="wizard-page-title">Últimos detalhes</h4>
+                    <p class="wizard-page-sub">Algo específico que você quer ou NÃO quer no treino?</p>
+
+                    <div class="form-group">
+                        <label>⭐ Pedido específico (prioridade máxima)</label>
+                        <textarea id="observacoes" rows="4" placeholder="Ex: quero supino com halteres em vez de barra, sem agachamento livre, prefiro flexão variada, incluir burpee..."></textarea>
+                        <small class="muted" style="color:#a78bfa;">A IA respeita ESTE campo antes de qualquer regra técnica.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Há quanto tempo você treina musculação/funcional?</label>
+                        <div class="chip-group" data-field="tempoTreino">
+                            <button type="button" class="chip" data-value="nunca">Nunca treinei</button>
+                            <button type="button" class="chip" data-value="meses">Alguns meses</button>
+                            <button type="button" class="chip" data-value="1ano">~1 ano</button>
+                            <button type="button" class="chip" data-value="2_5">2-5 anos</button>
+                            <button type="button" class="chip" data-value="5+">5+ anos</button>
+                        </div>
+                        <input type="hidden" id="tempoTreino" value="meses">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Compatibilidade legada (não preencha se for novo treino)</label>
+                        <select id="outrasAtividades" style="display:none;"><option value="nao">Não</option><option value="sim">Sim</option></select>
+                        <textarea id="detalhesAtividades" rows="2" style="display:none;"></textarea>
+                    </div>
+
+                    <div class="wizard-resumo" id="wizardResumo"></div>
+                </div>
+
+                <!-- Navegação do wizard -->
+                <div class="wizard-nav">
+                    <button type="button" class="btn wizard-back" id="wizardBackBtn" onclick="wizardNav(-1)" style="display:none;">← Voltar</button>
+                    <button type="button" class="btn btn-primary wizard-next" id="wizardNextBtn" onclick="wizardNav(1)">Próximo →</button>
+                    <button type="submit" class="btn btn-ai wizard-submit" id="wizardSubmitBtn" style="display:none;">🚀 Gerar Treino</button>
+                </div>
             </form>
         </div>
     </div>
@@ -3589,9 +4050,138 @@ CREATE POLICY "user_own" ON bhr_scans      FOR ALL USING (auth.uid()::text = use
         document.getElementById(id).querySelectorAll('input[type="date"]').forEach(input => {
             if (!input.value) input.value = new Date().toISOString().split('T')[0];
         });
+        // Wizard de criação de treino: reseta pro passo 1 toda vez que abre
+        if (id === 'gerarTreinoModal') {
+            _wizardStep = 1;
+            _renderWizardStep();
+        }
     }
 
     function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+    // =====================================================
+    // WIZARD DE CRIAÇÃO DE TREINO (multi-passo)
+    // =====================================================
+    let _wizardStep = 1;
+    const _WIZARD_TOTAL = 5;
+
+    function _renderWizardStep() {
+        // Mostra/esconde páginas
+        document.querySelectorAll('.wizard-page').forEach(p => {
+            p.classList.toggle('active', parseInt(p.dataset.page) === _wizardStep);
+        });
+        // Atualiza dots de progresso
+        document.querySelectorAll('.wizard-step-dot').forEach(d => {
+            const n = parseInt(d.dataset.step);
+            d.classList.remove('active', 'done');
+            if (n === _wizardStep) d.classList.add('active');
+            else if (n < _wizardStep) d.classList.add('done');
+        });
+        // Botões nav
+        document.getElementById('wizardBackBtn').style.display = _wizardStep > 1 ? '' : 'none';
+        document.getElementById('wizardNextBtn').style.display = _wizardStep < _WIZARD_TOTAL ? '' : 'none';
+        document.getElementById('wizardSubmitBtn').style.display = _wizardStep === _WIZARD_TOTAL ? '' : 'none';
+        // Resumo no último passo
+        if (_wizardStep === _WIZARD_TOTAL) _renderWizardResumo();
+        // Scroll pro topo do modal
+        const content = document.querySelector('#gerarTreinoModal .modal-content');
+        if (content) content.scrollTop = 0;
+    }
+
+    function wizardNav(direcao) {
+        const proximo = _wizardStep + direcao;
+        if (proximo < 1 || proximo > _WIZARD_TOTAL) return;
+        if (direcao > 0 && !_validarPassoAtual()) return;
+        _wizardStep = proximo;
+        _renderWizardStep();
+    }
+
+    function _validarPassoAtual() {
+        const obrigatorios = {
+            1: [['objetivo', 'Escolha um objetivo'], ['nivel', 'Escolha seu nível']],
+            3: [['frequencia', 'Escolha a frequência semanal'], ['duracao', 'Escolha a duração'], ['equipamentos', 'Selecione ao menos um equipamento']],
+            4: [['focoTreino', 'Escolha a ênfase do treino']]
+        };
+        const lista = obrigatorios[_wizardStep] || [];
+        for (const [campo, msg] of lista) {
+            const v = document.getElementById(campo)?.value;
+            if (!v || v === '') { notify('⚠️ ' + msg); return false; }
+        }
+        return true;
+    }
+
+    function _renderWizardResumo() {
+        const get = (id) => document.getElementById(id)?.value || '';
+        const objetivo = get('objetivo');
+        const nivel = get('nivel');
+        const estilo = get('estiloTreino');
+        const freq = get('frequencia');
+        const dur = get('duracao');
+        const dias = get('diasSemana');
+        const local = get('local');
+        const equipamentos = get('equipamentos');
+        const foco = get('focoTreino');
+        const areasPrio = get('areasPrio');
+        const areasDor = get('areasDor');
+        const praticaEsp = get('praticaEsporte');
+        const espNome = get('esporteNome');
+        const espDiaDed = get('esporteDiaDedicado');
+
+        const linhas = [];
+        if (objetivo) linhas.push(`<div class="resumo-linha">🎯 <strong>Objetivo:</strong> ${objetivo} • ${nivel} • ${estilo}</div>`);
+        if (freq) linhas.push(`<div class="resumo-linha">📅 <strong>${freq}x/semana</strong> de ${dur}min ${dias ? '(' + dias.split(',').join(', ') + ')' : ''} no ${local}</div>`);
+        if (equipamentos) linhas.push(`<div class="resumo-linha">🏋️ <strong>Equipamentos:</strong> ${equipamentos.split(',').join(', ')}</div>`);
+        if (foco) linhas.push(`<div class="resumo-linha">💪 <strong>Ênfase:</strong> ${foco}${areasPrio ? ' • Prioridade: ' + areasPrio.split(',').join(', ') : ''}</div>`);
+        if (praticaEsp === 'sim' && espNome) {
+            linhas.push(`<div class="resumo-linha">⚽ <strong>Esporte:</strong> ${espNome}${espDiaDed === 'sim' ? ' (1 dia dedicado funcional)' : ''}</div>`);
+        }
+        if (areasDor) linhas.push(`<div class="resumo-linha" style="color:var(--error);">⚠️ <strong>Cuidado com:</strong> ${areasDor.split(',').join(', ')}</div>`);
+
+        const el = document.getElementById('wizardResumo');
+        if (el) el.innerHTML = linhas.length ? linhas.join('') : '<em>Preencha os passos anteriores pra ver o resumo.</em>';
+    }
+
+    // Inicializa chips: clique seleciona, hidden input recebe valor (single ou multi)
+    function _initWizardChips() {
+        document.querySelectorAll('.chip-group').forEach(group => {
+            const field = group.dataset.field;
+            const isMulti = group.dataset.multi === 'true';
+            const hidden = document.getElementById(field);
+            // Pré-seleciona valor inicial do hidden
+            if (hidden && hidden.value) {
+                const valores = isMulti ? hidden.value.split(',').filter(Boolean) : [hidden.value];
+                group.querySelectorAll('.chip').forEach(c => {
+                    if (valores.includes(c.dataset.value)) c.classList.add('selected');
+                });
+            }
+            group.querySelectorAll('.chip').forEach(chip => {
+                chip.addEventListener('click', () => {
+                    if (isMulti) {
+                        chip.classList.toggle('selected');
+                        const selecionados = [...group.querySelectorAll('.chip.selected')].map(c => c.dataset.value);
+                        if (hidden) hidden.value = selecionados.join(',');
+                    } else {
+                        group.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+                        chip.classList.add('selected');
+                        if (hidden) hidden.value = chip.dataset.value;
+                    }
+                    // Reações dinâmicas
+                    if (field === 'praticaEsporte') {
+                        document.getElementById('esporteDetalhes').style.display = (chip.dataset.value === 'sim') ? '' : 'none';
+                    }
+                    if (field === 'esporteDiaDedicado') {
+                        document.getElementById('esporteFocoBlock').style.display = (chip.dataset.value === 'sim') ? '' : 'none';
+                    }
+                    // Trigger change pra updateRecommendations() etc
+                    if (hidden) hidden.dispatchEvent(new Event('change'));
+                });
+            });
+        });
+    }
+    // Inicializa quando DOM carrega
+    document.addEventListener('DOMContentLoaded', _initWizardChips);
+    // Backup: se o script carregar depois, tenta de novo após delay
+    setTimeout(() => { try { _initWizardChips(); } catch(e) {} }, 500);
 
     function notify(msg) {
         // Remove toast anterior se existir
@@ -3854,16 +4444,56 @@ CREATE POLICY "user_own" ON bhr_scans      FOR ALL USING (auth.uid()::text = use
         e.preventDefault();
         if (!checkApiKey()) { alert('Configure sua chave OpenAI nas configurações primeiro! ⚙️'); closeModal('gerarTreinoModal'); switchTab('perfil'); return; }
 
-        const objetivo    = document.getElementById('objetivo').value;
-        const nivel       = document.getElementById('nivel').value;
-        const focoTreino  = document.getElementById('focoTreino').value;
-        const frequencia  = document.getElementById('frequencia').value;
-        const duracao     = document.getElementById('duracao').value;
-        const equipamentos = Array.from(document.getElementById('equipamentos').selectedOptions).map(o => o.text);
-        const outrasAtividades   = document.getElementById('outrasAtividades').value;
-        const detalhesAtividades = document.getElementById('detalhesAtividades').value;
-        const restricoes  = document.getElementById('restricoes').value;
-        const observacoes = document.getElementById('observacoes').value;
+        // Helper pra ler valor (suporta hidden input do wizard ou select tradicional)
+        const _v = (id) => (document.getElementById(id)?.value || '').trim();
+        // Helper pra ler valores múltiplos (csv vindo de chip-group multi)
+        const _vList = (id) => {
+            const raw = _v(id);
+            return raw ? raw.split(',').map(s => s.trim()).filter(Boolean) : [];
+        };
+
+        // Mapas de label legível pros valores brutos
+        const LBL_EQUIP = { peso_livre: 'pesos livres (halteres/barras)', maquinas: 'máquinas', peso_corporal: 'peso corporal', elasticos: 'elásticos/bandas', kettlebell: 'kettlebell', trx: 'TRX/argolas', cardio_eq: 'esteira/bike/elíptico' };
+        const LBL_AREAS = { peito:'peito', costas:'costas', ombro:'ombro', biceps:'bíceps', triceps:'tríceps', quad:'quadríceps', posterior:'posterior de coxa', gluteo:'glúteo', panturrilha:'panturrilha', abdome:'abdome/core', cardio:'cardio', mobilidade:'mobilidade' };
+        const LBL_FOCO_ESP = { forca_explosiva:'força explosiva', resistencia:'resistência', core_estabilidade:'core/estabilidade', mobilidade:'mobilidade', equilibrio:'equilíbrio', potencia_pernas:'potência de pernas', potencia_superior:'potência de superior' };
+        const LBL_DIAS = { seg:'segunda', ter:'terça', qua:'quarta', qui:'quinta', sex:'sexta', sab:'sábado', dom:'domingo' };
+
+        // Campos obrigatórios
+        const objetivo    = _v('objetivo');
+        const nivel       = _v('nivel');
+        const focoTreino  = _v('focoTreino');
+        const frequencia  = _v('frequencia');
+        const duracao     = _v('duracao');
+        const equipamentos = _vList('equipamentos').map(k => LBL_EQUIP[k] || k);
+        // Campos novos do wizard
+        const estiloTreino = _v('estiloTreino') || 'convencional';
+        const energia      = _v('energia') || 'media';
+        const local        = _v('local') || 'academia';
+        const tempoTreino  = _v('tempoTreino') || 'meses';
+        const diasSemana   = _vList('diasSemana').map(k => LBL_DIAS[k] || k);
+        const areasPrio    = _vList('areasPrio').map(k => LBL_AREAS[k] || k);
+        const areasDor     = _vList('areasDor');
+        // Esporte
+        const praticaEsporte = _v('praticaEsporte') === 'sim';
+        const esporteNome    = _v('esporteNome');
+        const esporteFreq    = _v('esporteFreq');
+        const esporteNivel   = _v('esporteNivel');
+        const esporteDiaDedicado = _v('esporteDiaDedicado') === 'sim';
+        const esporteFoco    = _vList('esporteFoco').map(k => LBL_FOCO_ESP[k] || k);
+        const esporteComplementar = _v('esporteComplementar') !== 'nao';
+        // Compat (campos antigos)
+        const outrasAtividades   = praticaEsporte ? 'sim' : _v('outrasAtividades');
+        const detalhesAtividades = praticaEsporte
+            ? `${esporteNome} ${esporteFreq}x/sem (${esporteNivel})`
+            : _v('detalhesAtividades');
+        const restricoes  = _v('restricoes');
+        const observacoes = _v('observacoes');
+
+        // Validação básica
+        if (!objetivo || !nivel || !focoTreino || !frequencia || !duracao || equipamentos.length === 0) {
+            notify('⚠️ Preencha todos os passos obrigatórios');
+            return;
+        }
 
         // ── COLETA TODOS OS DADOS DO USUÁRIO ────────────────
         const perfil   = loadSingle(DB.perfil) || {};
@@ -3983,6 +4613,25 @@ ${exerciciosJaUsados.slice(0, 25).join(', ')}
             };
             const metodologia = metodologiaPorObjetivo[objetivo] || metodologiaPorObjetivo.condicionamento;
 
+            // ──── BLOCO ESPORTE ESPECÍFICO ────
+            const blocoEsporte = praticaEsporte && esporteNome ? `
+━━━ ESPORTE PRATICADO (CONSIDERAR NO PLANEJAMENTO) ━━━
+Esporte: ${esporteNome}
+Frequência: ${esporteFreq}x/semana | Nível: ${esporteNivel}
+${esporteDiaDedicado ? `🎯 USUÁRIO PEDIU 1 DIA DEDICADO ao ${esporteNome}: crie 1 dos ${frequencia} treinos como FUNCIONAL ESPECÍFICO pro esporte, focado em: ${esporteFoco.length > 0 ? esporteFoco.join(', ') : 'desempenho geral no esporte'}.
+   - Esse treino deve usar exercícios FUNCIONAIS que transferem pro ${esporteNome} (ex: pra kitesurf/surfe → core anti-rotação, equilíbrio em superfícies instáveis, força explosiva de pernas, mobilidade de quadril/ombro; pra futebol → potência de pernas, mudanças de direção, core; pra escalada → trações, dedos, mobilidade de quadril; pra tênis → rotação de tronco, ombro estável, agilidade lateral).
+   - Nomeie esse treino como "Treino X - Funcional ${esporteNome}".
+` : ''}${esporteComplementar ? `→ Os OUTROS treinos da semana devem COMPLEMENTAR o ${esporteNome}: evite sobrecarregar grupos já fatigados pelo esporte; use o treino de musculação pra reforçar pontos fracos típicos da modalidade e prevenir lesões.` : '→ Os outros treinos podem ser musculação convencional, sem ajustar pro esporte.'}
+` : '';
+
+            // ──── BLOCO ÁREAS PRIORITÁRIAS / DOR ────
+            const blocoAreas = (areasPrio.length > 0 || areasDor.length > 0) ? `
+━━━ ÁREAS — PRIORIDADES E CUIDADOS ━━━
+${areasPrio.length > 0 ? `🎯 ÁREAS PRIORITÁRIAS (dar mais volume/atenção): ${areasPrio.join(', ')}` : ''}
+${areasDor.length > 0 ? `⚠️ ÁREAS COM DOR/DESCONFORTO ATUAL: ${areasDor.join(', ')}
+→ EVITE exercícios que sobrecarreguem essas regiões. Use variações seguras. Inclua mobilidade/fortalecimento corretivo se possível.` : ''}
+` : '';
+
             const prompt = `Crie um plano de treino personalizado seguindo TODAS as regras abaixo. Pense passo a passo, mas retorne APENAS o JSON final.
 
 ${observacoes ? `⭐⭐⭐ PEDIDO EXPLÍCITO DO USUÁRIO (PRIORIDADE MÁXIMA — APLIQUE LITERALMENTE):
@@ -3992,16 +4641,19 @@ ${observacoes ? `⭐⭐⭐ PEDIDO EXPLÍCITO DO USUÁRIO (PRIORIDADE MÁXIMA —
 ` : ''}━━━ PERFIL ━━━
 Nome: ${perfil.nome || 'aluno'} | Idade: ${perfil.idade || 'n/d'}
 Objetivo: ${objetivo} → metodologia: ${metodologia}
-Nível: ${nivel}
+Nível: ${nivel} | Tempo treinando: ${tempoTreino} | Energia atual: ${energia}
+Estilo preferido: ${estiloTreino}
 Foco: ${
     focoTreino === 'superior' ? 'ÊNFASE SUPERIOR (mais volume em peito/costas/ombros/braços; perna em dia dedicado)'
     : focoTreino === 'inferior' ? 'ÊNFASE INFERIOR (mais volume em pernas/glúteos; superior em dia dedicado)'
     : 'CORPO TODO EQUILIBRADO (volume proporcional entre superior, inferior e core)'
 }
-Frequência: ${frequencia}x/semana | Duração-alvo: ${duracaoNum}min/sessão
+Frequência: ${frequencia}x/semana | Duração-alvo: ${duracaoNum}min/sessão | Local: ${local}
+${diasSemana.length > 0 ? `Dias disponíveis: ${diasSemana.join(', ')}` : ''}
 Equipamentos disponíveis: ${equipamentos.join(', ')}
-${outrasAtividades === 'sim' && detalhesAtividades ? `Atividades extras: ${detalhesAtividades} (considerar fadiga acumulada)` : ''}
+${outrasAtividades === 'sim' && detalhesAtividades && !praticaEsporte ? `Atividades extras: ${detalhesAtividades} (considerar fadiga acumulada)` : ''}
 ${restricoes ? `🚫 RESTRIÇÕES/LESÕES (NUNCA prescrever exercícios contraindicados): ${restricoes}` : ''}
+${blocoEsporte}${blocoAreas}
 
 ━━━ DADOS DE SAÚDE ━━━
 ${contextoBio}
@@ -4167,7 +4819,9 @@ Crie EXATAMENTE ${frequencia} treino(s). NÃO inclua links, NÃO use markdown, N
                     tipo: 'IA',
                     dataCriacao: agora,
                     progresso: {},
-                    config: { objetivo, nivel, focoTreino, frequencia, duracao, restricoes, observacoes, equipamentos },
+                    config: { objetivo, nivel, focoTreino, frequencia, duracao, restricoes, observacoes, equipamentos,
+                              estiloTreino, energia, local, tempoTreino, diasSemana, areasPrio, areasDor,
+                              praticaEsporte, esporteNome, esporteFreq, esporteNivel, esporteDiaDedicado, esporteFoco, esporteComplementar },
                     // Contexto que foi usado para gerar (para diagnóstico)
                     _contexto: { temBio: !!bioRecente, temExames: exames.length > 0, temScanner: !!ultimoScan, temHistorico: ultimas30Sessoes.length > 0 }
                 });
