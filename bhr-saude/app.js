@@ -1119,6 +1119,35 @@ function renderBio() {
       }
     }
   });
+
+  // Histórico de medições (ordem decrescente, com ações)
+  renderBioHistorico(ordenado);
+}
+
+function renderBioHistorico(ordenadoCrescente) {
+  const listEl = document.getElementById('bioList');
+  if (!listEl) return;
+  // precisa garantir que todas têm id (migração lazy)
+  ordenadoCrescente.forEach(b => { if (!b.id) b.id = new Date(b.data).getTime() + Math.floor(Math.random() * 1000); });
+  const desc = [...ordenadoCrescente].reverse().slice(0, 20);
+  listEl.innerHTML = desc.map(b => `
+    <div class="bio-item">
+      <div class="bio-item-head">
+        <div class="bio-item-date">${new Date(b.data).toLocaleDateString('pt-BR')}</div>
+        <div class="bio-item-tags">
+          <span>${b.peso}kg</span>
+          <span>${b.gordura}%</span>
+          <span>${b.massa}kg magra</span>
+          <span>${b.agua}% h2o</span>
+        </div>
+      </div>
+      ${b.observacoes ? `<div class="bio-item-obs">${b.observacoes}</div>` : ''}
+      <div class="exam-actions">
+        ${b.arquivo_path ? `<button class="exam-btn" onclick="abrirArquivoExame('${b.arquivo_path}')">VER ARQUIVO</button>` : ''}
+        <button class="exam-btn danger" onclick="deletarBio(${b.id})">EXCLUIR</button>
+      </div>
+    </div>
+  `).join('');
 }
 
 // ---------- EXAMES RENDER -------------------------------------------
@@ -1274,9 +1303,10 @@ function fecharMarkerChart() {
 }
 
 // Upload/ver arquivo via Supabase Storage
-async function uploadArquivoStorage(file) {
+// subpasta: 'exames' ou 'bio'
+async function uploadArquivoStorage(file, subpasta = 'exames') {
   const ext = (file.name.split('.').pop() || 'bin').toLowerCase();
-  const path = `${ironUserId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const path = `${ironUserId}/${subpasta}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
   const { error } = await sb.storage.from('exames').upload(path, file, {
     contentType: file.type || 'application/octet-stream',
     upsert: false
@@ -1286,7 +1316,7 @@ async function uploadArquivoStorage(file) {
 }
 
 async function abrirArquivoExame(path) {
-  if (!path) { alert('Arquivo não salvo (esse exame é antigo).'); return; }
+  if (!path) { alert('Arquivo não salvo (esse item é antigo).'); return; }
   try {
     const { data, error } = await sb.storage.from('exames').createSignedUrl(path, 60 * 60);
     if (error) throw error;
@@ -1482,8 +1512,7 @@ async function callClaudeWithFile(systemPrompt, userPrompt, fileBase64, mediaTyp
       max_tokens: maxTokens,
       system: systemPrompt,
       messages: [
-        { role: 'user', content: [contentBlock, { type: 'text', text: userPrompt }] },
-        { role: 'assistant', content: [{ type: 'text', text: '{' }] }  // prefill pra forçar JSON
+        { role: 'user', content: [contentBlock, { type: 'text', text: userPrompt }] }
       ]
     })
   });
@@ -1492,11 +1521,19 @@ async function callClaudeWithFile(systemPrompt, userPrompt, fileBase64, mediaTyp
     throw new Error(`Claude API ${res.status}: ${err.slice(0, 300)}`);
   }
   const data = await res.json();
-  let texto = '{' + (data.content?.[0]?.text || '');
-  // Claude pode fechar com texto após o JSON — pega só até o último }
-  const lastBrace = texto.lastIndexOf('}');
-  if (lastBrace > 0) texto = texto.slice(0, lastBrace + 1);
-  return JSON.parse(texto);
+  const raw = data.content?.[0]?.text || '';
+  // Remove markdown code fences se tiver, pega do primeiro { ao último }
+  const cleaned = raw.replace(/```(?:json)?/gi, '').trim();
+  const start = cleaned.indexOf('{');
+  const end = cleaned.lastIndexOf('}');
+  if (start < 0 || end <= start) {
+    throw new Error('Resposta sem JSON válido: ' + raw.slice(0, 200));
+  }
+  try {
+    return JSON.parse(cleaned.slice(start, end + 1));
+  } catch (parseErr) {
+    throw new Error('JSON malformado: ' + parseErr.message);
+  }
 }
 
 function fileToBase64(file) {
@@ -1563,7 +1600,7 @@ async function handleSalvarBio(ev) {
   status.className = 'form-status loading';
   status.textContent = 'Salvando no Supabase...';
   try {
-    await salvarBio({ data, peso, gordura, massa, agua, imc });
+    await salvarBio({ id: Date.now(), data, peso, gordura, massa, agua, imc });
     status.className = 'form-status success';
     status.textContent = '✓ Salvo!';
     setTimeout(fecharFormBio, 800);
@@ -1572,6 +1609,100 @@ async function handleSalvarBio(ev) {
     status.textContent = 'Erro: ' + e.message;
   }
 }
+
+// Upload de bioimpedância via foto/PDF com Claude Vision
+async function handleUploadBio(file) {
+  const statusEl = document.getElementById('bioUploadStatus');
+  const btn = document.getElementById('btnUploadBio');
+  const setStatus = (txt, cls = 'loading') => {
+    statusEl.className = 'form-status ' + cls;
+    statusEl.textContent = txt;
+  };
+  btn.disabled = true;
+  try {
+    setStatus('Lendo arquivo...');
+    const base64 = await fileToBase64(file);
+    const mediaType = file.type || (file.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
+
+    setStatus('Subindo arquivo e analisando bioimpedância...');
+    let arquivoPath = null;
+    try {
+      arquivoPath = await uploadArquivoStorage(file, 'bio');
+    } catch (err) {
+      console.warn('Storage falhou (bucket?):', err.message);
+    }
+
+    const system = `Você é um especialista em análise de bioimpedância (Tanita, Inbody, Omron, balanças smart, etc).
+Analise a imagem ou PDF recebido e retorne APENAS um objeto JSON (sem texto antes/depois, sem markdown) no formato:
+
+{
+  "data": "YYYY-MM-DD" (data da medição; se não achar, use "${todayKey()}"),
+  "peso": 79.5 (em kg, só o número),
+  "gordura": 22.5 (% de gordura, só o número),
+  "massa": 35.2 (em kg de massa muscular, só o número),
+  "agua": 55.0 (% água corporal, só o número),
+  "observacoes": "Texto 60-120 palavras em PT-BR sobre o que chama atenção (massa magra, hidratação, distribuição de gordura, idade metabólica se tiver, etc)"
+}
+
+Se o arquivo não for um resultado de bioimpedância, retorne { "erro": "motivo" }.`;
+
+    const result = await callClaudeWithFile(system, 'Analise esta bioimpedância e retorne o JSON.', base64, mediaType, 2000);
+
+    if (result.erro) {
+      setStatus('Arquivo não parece bioimpedância: ' + result.erro, 'error');
+      btn.disabled = false;
+      return;
+    }
+
+    const altura = 1.76;
+    const imc = (result.peso / (altura * altura)).toFixed(1);
+    const novaEntry = {
+      id: Date.now(),
+      data: result.data || todayKey(),
+      peso: result.peso,
+      gordura: result.gordura,
+      massa: result.massa,
+      agua: result.agua,
+      imc,
+      arquivo: file.name,
+      arquivo_path: arquivoPath,
+      observacoes: result.observacoes || ''
+    };
+
+    setStatus('Salvando no Supabase...');
+    await salvarBio(novaEntry);
+    setStatus(`✓ Medição de ${new Date(novaEntry.data).toLocaleDateString('pt-BR')} salva (peso ${novaEntry.peso}kg · gordura ${novaEntry.gordura}%)`, 'success');
+    setTimeout(() => { statusEl.textContent = ''; statusEl.className = 'form-status'; }, 5000);
+  } catch (e) {
+    console.error(e);
+    setStatus('Erro: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    const inp = document.getElementById('bioFileInput');
+    if (inp) inp.value = '';
+  }
+}
+
+async function deletarBio(id) {
+  const e = bioData.find(x => x.id === id);
+  if (!e) return;
+  if (!confirm(`Excluir medição de ${new Date(e.data).toLocaleDateString('pt-BR')}?`)) return;
+  try {
+    if (e.arquivo_path) {
+      await sb.storage.from('exames').remove([e.arquivo_path]).catch(() => {});
+    }
+    const nova = bioData.filter(x => x.id !== id);
+    const { error } = await sb.from('bhr_bio').upsert({
+      user_id: ironUserId,
+      record_content: nova,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'user_id' });
+    if (error) throw error;
+    bioData = nova;
+    renderBio();
+  } catch (err) { alert('Erro: ' + err.message); }
+}
+window.deletarBio = deletarBio;
 
 // ---------- ADD: EXAME (Claude Vision) -------------------------------
 async function handleUploadExame(file) {
@@ -1591,7 +1722,7 @@ async function handleUploadExame(file) {
     setStatus('Subindo arquivo e analisando (30-60s)...');
     let arquivoPath = null;
     try {
-      arquivoPath = await uploadArquivoStorage(file);
+      arquivoPath = await uploadArquivoStorage(file, 'exames');
     } catch (storageErr) {
       console.warn('Storage falhou (bucket não criado?):', storageErr.message);
       // segue sem storage — pelo menos a análise é preservada
@@ -1755,10 +1886,19 @@ async function gerarDieta() {
 document.getElementById('btnEntrar').onclick = handleEntrar;
 document.getElementById('btnLogout').onclick = handleSair;
 
-// Bio form
+// Bio form manual
 document.getElementById('btnNovaBio').onclick = abrirFormBio;
 document.getElementById('btnCancelarBio').onclick = fecharFormBio;
 document.getElementById('formBio').addEventListener('submit', handleSalvarBio);
+
+// Bio upload (foto/PDF via Claude Vision)
+document.getElementById('btnUploadBio').onclick = () => {
+  document.getElementById('bioFileInput').click();
+};
+document.getElementById('bioFileInput').addEventListener('change', (ev) => {
+  const f = ev.target.files?.[0];
+  if (f) handleUploadBio(f);
+});
 
 // Exame upload
 document.getElementById('btnNovoExame').onclick = () => {

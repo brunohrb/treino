@@ -1150,6 +1150,38 @@ section:nth-of-type(2) { animation-delay: 0.2s; }
 .exam-btn:active { transform: scale(0.97); }
 .exam-btn.danger { color: var(--accent); border-color: var(--accent-dim); }
 
+.add-btn-group {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 6px;
+}
+.add-btn.secondary {
+  background: transparent;
+  border-color: var(--line);
+  color: var(--ink-dim);
+}
+
+.bio-item {
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--success);
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  border-radius: 2px;
+}
+.bio-item-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.bio-item-date { font-family: var(--font-display); font-size: 14px; letter-spacing: 0.04em; }
+.bio-item-tags { display: flex; gap: 8px; flex-wrap: wrap; font-family: var(--font-mono); font-size: 10px; color: var(--ink-dim); }
+.bio-item-tags span { padding: 2px 6px; background: var(--bg); border-radius: 2px; }
+.bio-item-obs { font-size: 12px; color: var(--ink-dim); line-height: 1.5; margin-top: 6px; }
+
 .ia-panel {
   background: linear-gradient(180deg, var(--bg-card) 0%, var(--bg-elev) 100%);
   border: 1px solid var(--line);
@@ -1606,7 +1638,12 @@ section:nth-of-type(2) { animation-delay: 0.2s; }
     <h2 class="section-title" style="margin-top:8px;">Bioimpedância</h2>
     <p class="section-sub">Medições ao longo do tempo</p>
 
-    <button class="add-btn" id="btnNovaBio">+ Nova medição</button>
+    <div class="add-btn-group">
+      <button class="add-btn" id="btnUploadBio">+ Foto/PDF da bioimpedância</button>
+      <button class="add-btn secondary" id="btnNovaBio">+ Entrar manualmente</button>
+    </div>
+    <input type="file" id="bioFileInput" accept="image/*,application/pdf" style="display:none;">
+    <div id="bioUploadStatus" class="form-status"></div>
 
     <form id="formBio" class="add-form" style="display:none;">
       <label>Data <input type="date" id="bioData" required></label>
@@ -1631,6 +1668,8 @@ section:nth-of-type(2) { animation-delay: 0.2s; }
       <h5>EVOLUÇÃO <small id="bioChartRange"></small></h5>
       <canvas id="bioChart" height="160"></canvas>
     </div>
+
+    <div id="bioList" style="margin-top:14px;"></div>
 
     <div id="bioEmpty" class="empty-state" style="display:none;">
       <strong>Sem bioimpedância ainda</strong>
