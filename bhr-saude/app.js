@@ -1,7 +1,7 @@
 // ====================================================================
-// IRON — PROTOCOLO HIPERTROFIA · FOCO SUPERIOR · v2
-// Dados salvos em localStorage. Zera treino/dieta todo dia 00h.
-// Readiness e semana persistem.
+// BHR SAÚDE — treino · dieta · readiness · exames · bio · IA
+// Estado local em localStorage (treino/dieta zera 00h).
+// Exames, bio e chave Claude sincronizam via Supabase.
 // ====================================================================
 
 // ---------- DIVISÕES -------------------------------------------------
@@ -144,55 +144,195 @@ const WORKOUTS = {
 };
 
 // ---------- DIETA ----------------------------------------------------
+// Cada refeição tem múltiplas opções — usuário escolhe uma por dia.
+// skipOnFast: oculta quando Jejum 16h está ativo (janela alimentar 13h→20h30).
 const MEALS = [
   {
-    name: 'CAFÉ DA MANHÃ', time: '07:00',
-    items: [
-      '4 ovos inteiros + 3 claras mexidos',
-      '80g aveia com 1 banana e canela',
-      '1 colher (sopa) pasta de amendoim integral',
-      '1 xícara café preto'
-    ],
-    macros: { kcal: 680, p: 42, c: 75, g: 20 }
+    id: 'cafe', name: 'CAFÉ DA MANHÃ', time: '07:00', skipOnFast: true,
+    options: [
+      {
+        label: 'Ovos + aveia',
+        items: [
+          '4 ovos inteiros + 3 claras mexidos',
+          '80g aveia com 1 banana e canela',
+          '1 colher (sopa) pasta de amendoim integral',
+          '1 xícara café preto'
+        ],
+        macros: { kcal: 680, p: 42, c: 75, g: 20 }
+      },
+      {
+        label: 'Omelete + tapioca',
+        items: [
+          '3 ovos + 4 claras em omelete com queijo cottage (50g)',
+          '1 tapioca média (3 col sopa) com pasta de amendoim',
+          '1 mamão papaia pequeno',
+          'Café preto'
+        ],
+        macros: { kcal: 640, p: 44, c: 60, g: 22 }
+      },
+      {
+        label: 'Iogurte + granola',
+        items: [
+          '300g iogurte natural desnatado',
+          '1 scoop whey (30g) misturado',
+          '50g granola sem açúcar + 1 banana',
+          'Café preto'
+        ],
+        macros: { kcal: 620, p: 45, c: 70, g: 14 }
+      }
+    ]
   },
   {
-    name: 'LANCHE 1', time: '10:30',
-    items: [
-      '1 scoop whey (30g) com 300ml água',
-      '50g castanhas (pará/caju/amêndoa)',
-      '1 fruta (maçã, pera ou mamão)'
-    ],
-    macros: { kcal: 480, p: 28, c: 35, g: 24 }
+    id: 'lanche1', name: 'LANCHE 1', time: '10:30', skipOnFast: true,
+    options: [
+      {
+        label: 'Whey + castanhas',
+        items: [
+          '1 scoop whey (30g) com 300ml água',
+          '50g castanhas (pará/caju/amêndoa)',
+          '1 fruta (maçã, pera ou mamão)'
+        ],
+        macros: { kcal: 480, p: 28, c: 35, g: 24 }
+      },
+      {
+        label: 'Sanduíche proteico',
+        items: [
+          '2 fatias pão integral',
+          '100g peito de peru ou atum',
+          '1 col (sopa) requeijão light',
+          '1 fruta'
+        ],
+        macros: { kcal: 450, p: 32, c: 55, g: 10 }
+      }
+    ]
   },
   {
-    name: 'ALMOÇO', time: '13:00',
-    items: [
-      '180g peito de frango grelhado (ou patinho/tilápia)',
-      '150g arroz integral cozido + 1 concha feijão',
-      'Salada verde à vontade + 1 colher azeite',
-      '100g batata-doce ou legumes cozidos'
-    ],
-    macros: { kcal: 780, p: 50, c: 95, g: 18 }
+    id: 'almoco', name: 'ALMOÇO', time: '13:00',
+    options: [
+      {
+        label: 'Frango + arroz+feijão',
+        items: [
+          '180g peito de frango grelhado',
+          '150g arroz integral cozido + 1 concha feijão',
+          'Salada verde à vontade + 1 colher azeite',
+          '100g batata-doce ou legumes cozidos'
+        ],
+        macros: { kcal: 780, p: 50, c: 95, g: 18 }
+      },
+      {
+        label: 'Patinho + mandioquinha',
+        items: [
+          '180g patinho moído refogado',
+          '150g mandioquinha (baroa) ou mandioca',
+          'Brócolis + couve refogados',
+          '1 col azeite extravirgem'
+        ],
+        macros: { kcal: 760, p: 48, c: 85, g: 22 }
+      },
+      {
+        label: 'Tilápia + arroz integral',
+        items: [
+          '200g tilápia grelhada (ou outro peixe branco)',
+          '150g arroz integral',
+          'Salada colorida + azeite',
+          '1 laranja ou maçã'
+        ],
+        macros: { kcal: 700, p: 50, c: 85, g: 16 }
+      }
+    ]
   },
   {
-    name: 'PRÉ-TREINO', time: '16:30',
-    items: [
-      '2 fatias pão integral ou 1 tapioca (3 col. sopa)',
-      '100g peito de peru ou frango desfiado',
-      '1 banana com mel (1 col. chá)',
-      'Café preto ou cafeína 200mg'
-    ],
-    macros: { kcal: 520, p: 32, c: 80, g: 8 }
+    id: 'pre', name: 'PRÉ-TREINO', time: '16:30',
+    options: [
+      {
+        label: 'Pão + peru',
+        items: [
+          '2 fatias pão integral ou 1 tapioca (3 col sopa)',
+          '100g peito de peru ou frango desfiado',
+          '1 banana com mel (1 col chá)',
+          'Café preto ou cafeína 200mg'
+        ],
+        macros: { kcal: 520, p: 32, c: 80, g: 8 }
+      },
+      {
+        label: 'Shake rápido',
+        items: [
+          '1 scoop whey (30g)',
+          '1 banana média + 30g aveia',
+          '300ml leite desnatado',
+          'Cafeína 200mg (cápsula)'
+        ],
+        macros: { kcal: 480, p: 35, c: 70, g: 6 }
+      }
+    ]
   },
   {
-    name: 'JANTAR (pós-treino)', time: '20:30',
-    items: [
-      '200g carne vermelha magra ou salmão',
-      '150g arroz branco ou batata-doce',
-      'Legumes no vapor (brócolis, abobrinha, cenoura)',
-      '1 colher azeite de oliva extravirgem'
-    ],
-    macros: { kcal: 740, p: 48, c: 80, g: 22 }
+    id: 'jantar', name: 'JANTAR (pós-treino)', time: '20:30',
+    options: [
+      {
+        label: 'Carne + arroz',
+        items: [
+          '200g carne vermelha magra (patinho/coxão mole)',
+          '150g arroz branco ou batata-doce',
+          'Legumes no vapor (brócolis, abobrinha, cenoura)',
+          '1 col azeite de oliva extravirgem'
+        ],
+        macros: { kcal: 740, p: 48, c: 80, g: 22 }
+      },
+      {
+        label: 'Salmão + batata-doce',
+        items: [
+          '200g salmão grelhado',
+          '150g batata-doce assada',
+          'Aspargos ou brócolis',
+          '1 col azeite'
+        ],
+        macros: { kcal: 720, p: 45, c: 65, g: 26 }
+      },
+      {
+        label: 'Frango + macarrão integral',
+        items: [
+          '180g peito de frango em cubos',
+          '120g (cru) macarrão integral com molho de tomate caseiro',
+          'Salada + 1 col azeite',
+          'Parmesão ralado (10g)'
+        ],
+        macros: { kcal: 720, p: 50, c: 90, g: 14 }
+      }
+    ]
+  },
+  {
+    id: 'ceia', name: 'CEIA', time: '22:30', optional: true,
+    options: [
+      {
+        label: 'Caseína lenta',
+        items: [
+          '1 scoop caseína (30g) com 200ml água ou leite desnatado',
+          '20g amêndoas',
+          'Chá de camomila ou erva-doce'
+        ],
+        macros: { kcal: 280, p: 28, c: 8, g: 14 }
+      },
+      {
+        label: 'Cottage + fruta',
+        items: [
+          '200g queijo cottage',
+          '1 kiwi ou 1/2 mamão',
+          'Canela a gosto',
+          '10g castanhas-do-pará (1 unidade)'
+        ],
+        macros: { kcal: 260, p: 26, c: 18, g: 10 }
+      },
+      {
+        label: 'Claras + pasta de amendoim',
+        items: [
+          '6 claras mexidas (ou omelete)',
+          '1 col (sopa) pasta de amendoim integral',
+          '1 fatia pão integral (opcional)'
+        ],
+        macros: { kcal: 240, p: 25, c: 12, g: 12 }
+      }
+    ]
   }
 ];
 
@@ -209,9 +349,13 @@ function defaultState() {
     lastWeekIncrement: todayKey(),
     deloadEvery: 5,        // deload a cada X semanas (4-6 range comum)
     exercises: {},
-    meals: {},
+    meals: {},              // { [mealId]: true/false }
+    mealChoice: {},         // { [mealId]: optionIndex }
+    fastToday: false,       // jejum 16h ativo hoje
+    fastDays: {},           // { 'YYYY-MM-DD': true } — histórico de jejum
+    fastTarget: 2,          // meta de jejum por semana
     selectedDay: getTodayIndex(),
-    readiness: {}          // { '2026-04-20': { sleep:4, energy:3, soreness:2, mood:4, score:78 } }
+    readiness: {}           // { 'YYYY-MM-DD': { sleep, energy, soreness, mood, score } }
   };
 }
 
@@ -229,15 +373,22 @@ function loadState() {
     }
     // reset daily progress
     if (parsed.date !== todayKey()) {
+      // se jejum estava ativo ontem, registra no histórico semanal
+      if (parsed.fastToday) parsed.fastDays[parsed.date] = true;
       parsed.date = todayKey();
       parsed.exercises = {};
       parsed.meals = {};
+      parsed.fastToday = false;
       parsed.selectedDay = getTodayIndex();
       // increment week number every Monday
       if (getTodayIndex() === 1 && parsed.lastWeekIncrement !== todayKey()) {
         parsed.weekNumber++;
         parsed.lastWeekIncrement = todayKey();
       }
+    }
+    // migração: meals numéricos antigos (0,1,2...) → limpar
+    if (parsed.meals && Object.keys(parsed.meals).some(k => /^\d+$/.test(k))) {
+      parsed.meals = {};
     }
     return parsed;
   } catch {
@@ -377,34 +528,134 @@ function renderWorkout() {
 }
 
 // ---------- RENDER: MEALS -------------------------------------------
+function mealsAtivasHoje() {
+  return MEALS.filter(m => !(state.fastToday && m.skipOnFast));
+}
+
+function jejumCountSemana() {
+  // conta dias marcados como jejum na semana corrente (dom→sáb)
+  const today = new Date();
+  const dow = today.getDay();
+  const inicio = new Date(today); inicio.setDate(today.getDate() - dow);
+  inicio.setHours(0, 0, 0, 0);
+  let n = 0;
+  for (const d in state.fastDays) {
+    if (state.fastDays[d] && new Date(d) >= inicio) n++;
+  }
+  if (state.fastToday) n++;
+  return n;
+}
+
 function renderMeals() {
   const container = document.getElementById('mealsContainer');
-  container.innerHTML = MEALS.map((m, idx) => {
-    const done = state.meals[idx];
-    const items = m.items.map(i => `<li>${i}</li>`).join('');
+  const ativas = mealsAtivasHoje();
+
+  // Barra de modo + contador de jejum
+  const jej = jejumCountSemana();
+  const meta = state.fastTarget || 2;
+  const barraModo = `
+    <div class="diet-mode">
+      <div class="diet-mode-title">
+        <span class="diet-mode-label">MODO HOJE</span>
+        <span class="diet-jejum-counter">JEJUM ${jej}/${meta} ESTA SEMANA</span>
+      </div>
+      <div class="diet-mode-toggle">
+        <button class="diet-mode-btn ${!state.fastToday ? 'active' : ''}" data-mode="normal">NORMAL<small>6 refeições</small></button>
+        <button class="diet-mode-btn ${state.fastToday ? 'active' : ''}" data-mode="fast">JEJUM 16H<small>janela 13h → 22h</small></button>
+      </div>
+      ${state.fastToday ? '<div class="diet-fast-note">🕐 Primeira refeição 13h · última 22h · água, café preto e chá liberados no jejum</div>' : ''}
+    </div>
+  `;
+
+  const cards = ativas.map(m => {
+    const chosenIdx = state.mealChoice[m.id] ?? 0;
+    const opt = m.options[chosenIdx] || m.options[0];
+    const done = !!state.meals[m.id];
+    const items = opt.items.map(i => `<li>${i}</li>`).join('');
+
+    const optChips = m.options.length > 1 ? `
+      <div class="meal-options">
+        ${m.options.map((o, i) => `
+          <button class="opt-chip ${i === chosenIdx ? 'active' : ''}" data-meal="${m.id}" data-opt="${i}">${o.label}</button>
+        `).join('')}
+      </div>
+    ` : '';
+
     return `
-      <div class="meal-card ${done ? 'done' : ''}" data-idx="${idx}">
+      <div class="meal-card ${done ? 'done' : ''} ${m.optional ? 'optional' : ''}" data-meal="${m.id}">
         <div class="meal-header">
-          <div class="meal-name">${m.name}</div>
+          <div class="meal-name">${m.name}${m.optional ? ' <span class="opt-tag">opcional</span>' : ''}</div>
           <div class="meal-time">${m.time}</div>
         </div>
+        ${optChips}
         <ul class="meal-items">${items}</ul>
         <div class="meal-macros">
-          <span>${m.macros.kcal}kcal</span>
-          <span>P ${m.macros.p}g</span>
-          <span>C ${m.macros.c}g</span>
-          <span>G ${m.macros.g}g</span>
+          <span>${opt.macros.kcal}kcal</span>
+          <span>P ${opt.macros.p}g</span>
+          <span>C ${opt.macros.c}g</span>
+          <span>G ${opt.macros.g}g</span>
         </div>
       </div>
     `;
   }).join('');
 
+  // Totais calculados com opção escolhida
+  const tot = ativas.reduce((acc, m) => {
+    const idx = state.mealChoice[m.id] ?? 0;
+    const o = m.options[idx] || m.options[0];
+    acc.kcal += o.macros.kcal; acc.p += o.macros.p; acc.c += o.macros.c; acc.g += o.macros.g;
+    return acc;
+  }, { kcal: 0, p: 0, c: 0, g: 0 });
+
+  const totais = `
+    <div class="meal-totals">
+      <div class="meal-totals-label">TOTAL DO DIA</div>
+      <div class="meal-totals-grid">
+        <div><strong>${tot.kcal}</strong><small>kcal</small></div>
+        <div><strong>${tot.p}</strong><small>ptn</small></div>
+        <div><strong>${tot.c}</strong><small>carb</small></div>
+        <div><strong>${tot.g}</strong><small>gord</small></div>
+      </div>
+    </div>
+  `;
+
+  container.innerHTML = barraModo + cards + totais;
+
+  // Click nos cards → toggle done (ignora cliques em chips)
   container.querySelectorAll('.meal-card').forEach(el => {
-    el.onclick = () => {
-      const idx = el.dataset.idx;
-      state.meals[idx] = !state.meals[idx];
+    el.onclick = (ev) => {
+      if (ev.target.closest('.opt-chip')) return;
+      const id = el.dataset.meal;
+      state.meals[id] = !state.meals[id];
       el.classList.toggle('done');
       saveState();
+    };
+  });
+
+  // Chips pra trocar opção
+  container.querySelectorAll('.opt-chip').forEach(chip => {
+    chip.onclick = (ev) => {
+      ev.stopPropagation();
+      const mealId = chip.dataset.meal;
+      const optIdx = +chip.dataset.opt;
+      state.mealChoice[mealId] = optIdx;
+      saveState();
+      renderMeals();
+    };
+  });
+
+  // Toggle de modo normal/jejum
+  container.querySelectorAll('.diet-mode-btn').forEach(btn => {
+    btn.onclick = () => {
+      const mode = btn.dataset.mode;
+      state.fastToday = (mode === 'fast');
+      // ao entrar em jejum, desmarca café e lanche 1
+      if (state.fastToday) {
+        state.meals.cafe = false;
+        state.meals.lanche1 = false;
+      }
+      saveState();
+      renderMeals();
     };
   });
 }
@@ -424,10 +675,12 @@ function updateProgress() {
     document.getElementById('valTreino').textContent = 'OFF';
   }
 
-  const mealsDone = Object.values(state.meals).filter(Boolean).length;
-  const mealsPct = (mealsDone / MEALS.length) * 100;
+  const ativas = mealsAtivasHoje();
+  const mealsDone = ativas.filter(m => state.meals[m.id]).length;
+  const mealsTotal = ativas.length;
+  const mealsPct = mealsTotal > 0 ? (mealsDone / mealsTotal) * 100 : 0;
   document.getElementById('barDieta').style.width = mealsPct + '%';
-  document.getElementById('valDieta').textContent = `${mealsDone} / ${MEALS.length}`;
+  document.getElementById('valDieta').textContent = `${mealsDone} / ${mealsTotal}${state.fastToday ? ' · JEJUM' : ''}`;
 
   // week counter
   const wc = document.getElementById('weekCounter');
@@ -750,6 +1003,7 @@ async function handleSair() {
   try { await sb.auth.signOut(); } catch {}
   ironUser = null; ironUserId = null;
   bioData = []; examesData = [];
+  claudeKeyCache = null;
   if (bioChart) { bioChart.destroy(); bioChart = null; }
   if (examesChart) { examesChart.destroy(); examesChart = null; }
   document.getElementById('syncBar').style.display = 'none';
@@ -764,6 +1018,7 @@ function onLogado() {
   const nome = (ironUser.email || '').replace('@bhr.treino', '');
   document.getElementById('syncUser').textContent = nome.toUpperCase();
   carregarSaude();
+  loadKeyFromSupabase();
 }
 
 async function carregarSaude() {
@@ -947,16 +1202,43 @@ function renderExames() {
 
 // ====================================================================
 // CLAUDE API — análise IA + geração de treino/dieta
+// Chave armazenada em Supabase (tabela bhr_config, RLS por user_id).
+// Nunca em localStorage nem commitada no git.
 // ====================================================================
-const CLAUDE_KEY_STORAGE = 'iron-claude-key';
 const CLAUDE_MODEL = 'claude-sonnet-4-6';
+let claudeKeyCache = null;  // cache em memória após 1ª leitura
 
-function getClaudeKey() { return localStorage.getItem(CLAUDE_KEY_STORAGE) || ''; }
-function setClaudeKey(k) { localStorage.setItem(CLAUDE_KEY_STORAGE, k); }
+async function getClaudeKey() {
+  if (claudeKeyCache) return claudeKeyCache;
+  if (!sb || !ironUserId) return '';
+  try {
+    const { data } = await sb.from('bhr_config')
+      .select('record_content').eq('user_id', ironUserId).maybeSingle();
+    claudeKeyCache = data?.record_content?.claude_key || '';
+    return claudeKeyCache;
+  } catch (e) {
+    console.warn('bhr_config não encontrada:', e.message);
+    return '';
+  }
+}
+
+async function setClaudeKey(k) {
+  if (!sb || !ironUserId) throw new Error('Faça login primeiro');
+  const payload = {
+    user_id: ironUserId,
+    record_content: { claude_key: k, updated_at: new Date().toISOString() },
+    updated_at: new Date().toISOString()
+  };
+  const { error } = await sb.from('bhr_config').upsert(payload, { onConflict: 'user_id' });
+  if (error) throw error;
+  claudeKeyCache = k;
+}
+
+async function clearClaudeKeyCache() { claudeKeyCache = null; }
 
 async function callClaude(systemPrompt, userPrompt, maxTokens = 1500) {
-  const key = getClaudeKey();
-  if (!key) throw new Error('Configure sua chave Claude API primeiro (expanda "CONFIGURAR CHAVE" acima).');
+  const key = await getClaudeKey();
+  if (!key) throw new Error('Configure sua chave Claude API primeiro (expanda "CONFIGURAR CHAVE" e cole sua key).');
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -1040,7 +1322,7 @@ function setIaLoading(on, msg) {
 
 async function analisarSaude() {
   if (!bioData.length && !examesData.length) {
-    showIaOutput('Sem bio/exames ainda. Registre no app BHR antes.');
+    showIaOutput('Sem bio/exames ainda. Registre no app BHR Treinos antes.');
     return;
   }
   setIaLoading(true, 'Analisando seus exames + bio...');
@@ -1081,13 +1363,48 @@ document.getElementById('btnLogout').onclick = handleSair;
 document.getElementById('authSenha').addEventListener('keydown', e => { if (e.key === 'Enter') handleEntrar(); });
 
 const iaKeyInput = document.getElementById('iaKey');
-iaKeyInput.value = getClaudeKey();
-document.getElementById('btnSalvarKey').onclick = () => {
-  setClaudeKey(iaKeyInput.value.trim());
+const iaKeyStatus = document.getElementById('iaKeyStatus');
+
+async function loadKeyFromSupabase() {
+  if (!ironUserId) { iaKeyInput.placeholder = 'Faça login primeiro'; return; }
+  const k = await getClaudeKey();
+  if (k) {
+    iaKeyInput.value = '••••••••••••••••' + k.slice(-4);
+    iaKeyInput.dataset.saved = '1';
+    if (iaKeyStatus) iaKeyStatus.textContent = 'Chave carregada do Supabase';
+  } else {
+    iaKeyInput.value = '';
+    iaKeyInput.placeholder = 'sk-ant-...';
+    if (iaKeyStatus) iaKeyStatus.textContent = '';
+  }
+}
+
+iaKeyInput.addEventListener('focus', () => {
+  if (iaKeyInput.dataset.saved) {
+    iaKeyInput.value = '';
+    iaKeyInput.dataset.saved = '';
+    iaKeyInput.placeholder = 'cole a nova chave';
+  }
+});
+
+document.getElementById('btnSalvarKey').onclick = async () => {
   const btn = document.getElementById('btnSalvarKey');
+  const raw = iaKeyInput.value.trim();
+  if (!raw || raw.startsWith('•')) { if (iaKeyStatus) iaKeyStatus.textContent = 'Cole uma chave primeiro'; return; }
+  if (!ironUserId) { if (iaKeyStatus) iaKeyStatus.textContent = 'Faça login antes de salvar'; return; }
   const orig = btn.textContent;
-  btn.textContent = 'SALVO';
-  setTimeout(() => btn.textContent = orig, 1200);
+  btn.textContent = '...';
+  try {
+    await setClaudeKey(raw);
+    btn.textContent = 'SALVO';
+    if (iaKeyStatus) iaKeyStatus.textContent = 'Salvo no Supabase (RLS protegido)';
+    iaKeyInput.value = '••••••••••••••••' + raw.slice(-4);
+    iaKeyInput.dataset.saved = '1';
+  } catch (e) {
+    btn.textContent = 'ERRO';
+    if (iaKeyStatus) iaKeyStatus.textContent = 'Erro: ' + e.message;
+  }
+  setTimeout(() => btn.textContent = orig, 1800);
 };
 
 document.getElementById('btnAnalisarSaude').onclick = analisarSaude;
