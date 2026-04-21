@@ -1122,10 +1122,209 @@ function renderBio() {
 }
 
 // ---------- EXAMES RENDER -------------------------------------------
+// Marcadores-chave monitorados (com aliases pra matching case-insensitive)
+const MARCADORES_CHAVE = [
+  { nome: 'Colesterol Total', aliases: ['colesterol total'] },
+  { nome: 'LDL', aliases: ['ldl', 'colesterol ldl'] },
+  { nome: 'HDL', aliases: ['hdl', 'colesterol hdl'] },
+  { nome: 'Triglicerídeos', aliases: ['triglicer', 'tgl'] },
+  { nome: 'Glicose', aliases: ['glicose', 'glicemia em jejum', 'glicemia jejum'] },
+  { nome: 'HbA1c', aliases: ['hemoglobina glicada', 'hba1c', 'a1c'] },
+  { nome: 'Hemoglobina', aliases: ['hemoglobina '] }, // espaço pra não casar com glicada
+  { nome: 'Testosterona', aliases: ['testosterona total', 'testosterona livre', 'testosterona'] },
+  { nome: 'TSH', aliases: ['tsh'] },
+  { nome: 'T4 Livre', aliases: ['t4 livre', 't4l'] },
+  { nome: 'Vitamina D', aliases: ['vitamina d', '25-oh', '25 oh', '25(oh)'] },
+  { nome: 'Vitamina B12', aliases: ['vitamina b12', 'b12'] },
+  { nome: 'Ferritina', aliases: ['ferritina'] },
+  { nome: 'Creatinina', aliases: ['creatinina'] },
+  { nome: 'Ureia', aliases: ['ureia', 'uréia'] },
+  { nome: 'TGO', aliases: ['tgo', 'ast'] },
+  { nome: 'TGP', aliases: ['tgp', 'alt'] },
+  { nome: 'Ácido Úrico', aliases: ['ácido úrico', 'acido urico'] },
+  { nome: 'PSA', aliases: ['psa'] },
+  { nome: 'PCR', aliases: ['pcr', 'proteína c reativa', 'proteina c reativa'] }
+];
+
+function matchMarcador(parametro) {
+  const p = (parametro || '').toLowerCase().trim();
+  if (!p) return null;
+  return MARCADORES_CHAVE.find(m => m.aliases.some(a => p.includes(a)));
+}
+
+function parseValorNumerico(raw) {
+  if (raw == null) return NaN;
+  const m = raw.toString().replace(/\./g, '').replace(',', '.').match(/-?[\d.]+/);
+  return m ? parseFloat(m[0]) : NaN;
+}
+
+function extrairIndicadores() {
+  // Agrupa valores de cada marcador-chave por ordem cronológica
+  const ordenado = [...examesData].sort((a, b) => new Date(a.data) - new Date(b.data));
+  const ind = {};
+  ordenado.forEach(e => {
+    if (!e.analiseIA?.resultados_principais) return;
+    e.analiseIA.resultados_principais.forEach(r => {
+      const marc = matchMarcador(r.parametro);
+      if (!marc) return;
+      const num = parseValorNumerico(r.valor);
+      if (isNaN(num)) return;
+      if (!ind[marc.nome]) ind[marc.nome] = [];
+      ind[marc.nome].push({ data: e.data, valor: num, raw: r.valor, status: (r.status || 'normal').toLowerCase(), referencia: r.referencia });
+    });
+  });
+  return ind;
+}
+
+function renderIndicadores() {
+  const cont = document.getElementById('indicadoresList');
+  if (!cont) return;
+  const ind = extrairIndicadores();
+  const nomes = Object.keys(ind);
+  if (nomes.length === 0) {
+    cont.innerHTML = '';
+    document.getElementById('indicadoresSection').style.display = 'none';
+    return;
+  }
+  document.getElementById('indicadoresSection').style.display = 'block';
+
+  cont.innerHTML = nomes.map(nome => {
+    const vals = ind[nome];
+    const atual = vals[vals.length - 1];
+    const anterior = vals.length > 1 ? vals[vals.length - 2] : null;
+    const delta = anterior ? (atual.valor - anterior.valor) : null;
+    const statusCls = atual.status.replace(/[^a-z]/g, '').replace('atencao', 'atencao') || 'normal';
+
+    let trendHtml = '';
+    if (delta !== null && Math.abs(delta) > 0.01) {
+      const arrow = delta > 0 ? '↑' : '↓';
+      // subir é ruim pra maioria (colesterol, LDL, glicose), mas bom pra HDL, hemoglobina, testosterona, vit D
+      const subirBom = ['HDL', 'Hemoglobina', 'Testosterona', 'Vitamina D', 'Vitamina B12', 'Ferritina', 'T4 Livre'].includes(nome);
+      const bom = subirBom ? delta > 0 : delta < 0;
+      const cls = bom ? 'good' : 'bad';
+      const pct = anterior.valor !== 0 ? ((delta / anterior.valor) * 100).toFixed(1) : '';
+      trendHtml = `<div class="indicator-trend ${cls}">${arrow} ${Math.abs(delta).toFixed(1)} ${pct ? `(${delta > 0 ? '+' : '-'}${Math.abs(pct)}%)` : ''}</div>`;
+    } else if (vals.length === 1) {
+      trendHtml = `<div class="indicator-trend neutral">1ª medição</div>`;
+    }
+
+    return `
+      <div class="indicator-card status-${statusCls}" data-marker="${nome}">
+        <div class="indicator-name">${nome.toUpperCase()}</div>
+        <div class="indicator-value">${atual.raw}</div>
+        <div class="indicator-status ${statusCls}">${atual.status.toUpperCase()}</div>
+        ${trendHtml}
+        ${atual.referencia ? `<div class="indicator-ref">ref: ${atual.referencia}</div>` : ''}
+      </div>
+    `;
+  }).join('');
+
+  // Click no card → scroll pro gráfico daquele marcador
+  cont.querySelectorAll('.indicator-card').forEach(card => {
+    card.onclick = () => {
+      const marker = card.dataset.marker;
+      const vals = ind[marker];
+      if (vals.length >= 2) renderMarkerChart(marker, vals);
+    };
+  });
+}
+
+let markerChart = null;
+function renderMarkerChart(marker, vals) {
+  const wrap = document.getElementById('markerChartWrap');
+  const canvas = document.getElementById('markerChart');
+  document.getElementById('markerChartTitle').textContent = marker.toUpperCase();
+  wrap.style.display = 'block';
+  wrap.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+  const labels = vals.map(v => new Date(v.data).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' }));
+  const data = vals.map(v => v.valor);
+
+  if (markerChart) markerChart.destroy();
+  markerChart = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: marker,
+        data,
+        borderColor: '#ff2d2d',
+        backgroundColor: 'rgba(255,45,45,0.15)',
+        tension: 0.3,
+        fill: true,
+        pointRadius: 5,
+        pointHoverRadius: 7
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#8a8a85', font: { size: 10 } }, grid: { color: 'rgba(42,42,42,0.5)' } },
+        y: { ticks: { color: '#8a8a85', font: { size: 10 } }, grid: { color: 'rgba(42,42,42,0.5)' } }
+      }
+    }
+  });
+}
+
+function fecharMarkerChart() {
+  document.getElementById('markerChartWrap').style.display = 'none';
+  if (markerChart) { markerChart.destroy(); markerChart = null; }
+}
+
+// Upload/ver arquivo via Supabase Storage
+async function uploadArquivoStorage(file) {
+  const ext = (file.name.split('.').pop() || 'bin').toLowerCase();
+  const path = `${ironUserId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const { error } = await sb.storage.from('exames').upload(path, file, {
+    contentType: file.type || 'application/octet-stream',
+    upsert: false
+  });
+  if (error) throw error;
+  return path;
+}
+
+async function abrirArquivoExame(path) {
+  if (!path) { alert('Arquivo não salvo (esse exame é antigo).'); return; }
+  try {
+    const { data, error } = await sb.storage.from('exames').createSignedUrl(path, 60 * 60);
+    if (error) throw error;
+    window.open(data.signedUrl, '_blank');
+  } catch (e) { alert('Erro ao abrir: ' + e.message); }
+}
+
+async function deletarExame(id) {
+  const e = examesData.find(x => x.id === id);
+  if (!e) return;
+  if (!confirm(`Excluir exame "${e.tipo}" de ${new Date(e.data).toLocaleDateString('pt-BR')}?`)) return;
+  try {
+    // apaga arquivo do storage se existir
+    if (e.arquivo_path) {
+      await sb.storage.from('exames').remove([e.arquivo_path]).catch(() => {});
+    }
+    // remove da lista e persiste
+    const nova = examesData.filter(x => x.id !== id);
+    const { error } = await sb.from('bhr_exames').upsert({
+      user_id: ironUserId,
+      record_content: nova,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'user_id' });
+    if (error) throw error;
+    examesData = nova;
+    renderExames();
+  } catch (err) { alert('Erro: ' + err.message); }
+}
+window.abrirArquivoExame = abrirArquivoExame;
+window.deletarExame = deletarExame;
+window.fecharMarkerChart = fecharMarkerChart;
+
 function renderExames() {
   const listEl = document.getElementById('examesList');
   const wrapEl = document.getElementById('examesChartWrap');
   const emptyEl = document.getElementById('examesEmpty');
+
+  renderIndicadores();
 
   if (!examesData || examesData.length === 0) {
     listEl.innerHTML = '';
@@ -1136,46 +1335,44 @@ function renderExames() {
   emptyEl.style.display = 'none';
   const ordenado = [...examesData].sort((a, b) => new Date(b.data) - new Date(a.data));
 
-  listEl.innerHTML = ordenado.slice(0, 8).map(e => {
+  listEl.innerHTML = ordenado.slice(0, 20).map(e => {
     const temIA = e.analiseIA && e.analiseIA.analise_geral;
     const resumo = temIA ? e.analiseIA.analise_geral : (e.resultados || 'Sem análise');
+    const nMarc = e.analiseIA?.resultados_principais?.length || 0;
     return `
       <div class="exam-item">
         <div class="exam-head">
           <div class="exam-type">${(e.tipo || 'Exame').toUpperCase()}</div>
           <div class="exam-date">${new Date(e.data).toLocaleDateString('pt-BR')}</div>
         </div>
-        ${e.arquivo ? `<div style="font-family:var(--font-mono);font-size:10px;color:var(--accent);letter-spacing:0.08em;">${e.arquivo}</div>` : ''}
+        ${e.arquivo ? `<div style="font-family:var(--font-mono);font-size:11px;color:var(--ink-dim);letter-spacing:0.05em;margin-bottom:4px;">📄 ${e.arquivo}${nMarc ? ` · ${nMarc} marcadores` : ''}</div>` : ''}
         <div class="exam-ia">${resumo}</div>
+        <div class="exam-actions">
+          ${e.arquivo_path ? `<button class="exam-btn" onclick="abrirArquivoExame('${e.arquivo_path}')">VER ARQUIVO</button>` : ''}
+          <button class="exam-btn danger" onclick="deletarExame(${e.id})">EXCLUIR</button>
+        </div>
       </div>
     `;
   }).join('');
 
-  // gráfico: agrupa marcadores principais
+  // gráfico multi-linha com todos os marcadores-chave (até 6)
   const comIA = ordenado.filter(e => e.analiseIA && e.analiseIA.resultados_principais);
   if (comIA.length < 2) { wrapEl.style.display = 'none'; return; }
 
-  const parametros = {};
-  comIA.forEach(e => {
-    e.analiseIA.resultados_principais.forEach(r => {
-      const v = parseFloat((r.valor || '').toString().match(/[\d.]+/)?.[0]);
-      if (isNaN(v)) return;
-      if (!parametros[r.parametro]) parametros[r.parametro] = [];
-      parametros[r.parametro].push({ data: e.data, valor: v });
-    });
-  });
-
-  const topParametros = Object.keys(parametros).slice(0, 5);
-  if (topParametros.length === 0) { wrapEl.style.display = 'none'; return; }
+  const ind = extrairIndicadores();
+  const markersParaPlotar = Object.keys(ind).filter(k => ind[k].length >= 2).slice(0, 6);
+  if (markersParaPlotar.length === 0) { wrapEl.style.display = 'none'; return; }
 
   wrapEl.style.display = 'block';
-  const datas = [...new Set(comIA.map(e => e.data))].sort((a, b) => new Date(a) - new Date(b));
-  const labels = datas.map(d => new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }));
-  const cores = ['#ff2d2d', '#ffb020', '#00d97e', '#8a8afc', '#fc6e9b'];
-  const datasets = topParametros.map((p, i) => ({
+  const datasCronologia = [...new Set(
+    markersParaPlotar.flatMap(k => ind[k].map(v => v.data))
+  )].sort((a, b) => new Date(a) - new Date(b));
+  const labels = datasCronologia.map(d => new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }));
+  const cores = ['#ff2d2d', '#ffb020', '#00d97e', '#8a8afc', '#fc6e9b', '#6be0ff'];
+  const datasets = markersParaPlotar.map((p, i) => ({
     label: p,
-    data: datas.map(d => {
-      const entry = parametros[p].find(x => x.data === d);
+    data: datasCronologia.map(d => {
+      const entry = ind[p].find(x => x.data === d);
       return entry ? entry.valor : null;
     }),
     borderColor: cores[i],
@@ -1184,7 +1381,7 @@ function renderExames() {
     spanGaps: true
   }));
 
-  document.getElementById('examesChartRange').textContent = `${labels[0]} → ${labels[labels.length - 1]}`;
+  document.getElementById('examesChartRange').textContent = `${labels[0]} → ${labels[labels.length - 1]} · toque num card acima pra ver só o marcador`;
   if (examesChart) examesChart.destroy();
   examesChart = new Chart(document.getElementById('examesChart'), {
     type: 'line',
@@ -1390,7 +1587,15 @@ async function handleUploadExame(file) {
     const base64 = await fileToBase64(file);
     const mediaType = file.type || (file.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
 
-    setStatus('Claude analisando o exame (30-60s)...');
+    // Upload em paralelo: storage + análise
+    setStatus('Subindo arquivo e analisando (30-60s)...');
+    let arquivoPath = null;
+    try {
+      arquivoPath = await uploadArquivoStorage(file);
+    } catch (storageErr) {
+      console.warn('Storage falhou (bucket não criado?):', storageErr.message);
+      // segue sem storage — pelo menos a análise é preservada
+    }
     const system = `Você é um médico especialista em análise de exames laboratoriais.
 Analise a imagem ou PDF do exame recebido e retorne APENAS um objeto JSON válido (sem texto antes/depois, sem markdown), no formato:
 
@@ -1423,6 +1628,7 @@ Regras:
       data: result.data || todayKey(),
       tipo: result.tipo || 'Exame',
       arquivo: file.name,
+      arquivo_path: arquivoPath,
       analiseIA: {
         analise_geral: result.analise_geral || '',
         resultados_principais: result.resultados_principais || []

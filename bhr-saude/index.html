@@ -1045,6 +1045,111 @@ section:nth-of-type(2) { animation-delay: 0.2s; }
 .form-status.success { color: var(--success); }
 .form-status.loading { color: var(--warn); }
 
+/* Indicadores */
+.subsection-title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  letter-spacing: 0.1em;
+  color: var(--ink);
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.subsection-title::before {
+  content: '';
+  width: 16px;
+  height: 2px;
+  background: var(--accent);
+}
+.indicator-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-top: 10px;
+}
+.indicator-card {
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--ink-dim);
+  padding: 12px 12px 10px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.indicator-card:active { transform: scale(0.98); }
+.indicator-card.status-normal { border-top-color: var(--success); }
+.indicator-card.status-alto { border-top-color: var(--accent); }
+.indicator-card.status-baixo { border-top-color: var(--warn); }
+.indicator-card.status-atencao { border-top-color: var(--warn); }
+.indicator-name {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--ink-dim);
+  letter-spacing: 0.1em;
+  margin-bottom: 6px;
+}
+.indicator-value {
+  font-family: var(--font-display);
+  font-size: 22px;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+  line-height: 1.1;
+}
+.indicator-status {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  padding: 3px 8px;
+  border-radius: 2px;
+  letter-spacing: 0.1em;
+  margin-top: 6px;
+  font-weight: 700;
+}
+.indicator-status.normal { background: rgba(0,217,126,0.15); color: var(--success); }
+.indicator-status.alto { background: rgba(255,45,45,0.15); color: var(--accent); }
+.indicator-status.baixo { background: rgba(255,176,32,0.15); color: var(--warn); }
+.indicator-status.atencao { background: rgba(255,176,32,0.15); color: var(--warn); }
+.indicator-trend {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  margin-top: 6px;
+}
+.indicator-trend.good { color: var(--success); }
+.indicator-trend.bad { color: var(--accent); }
+.indicator-trend.neutral { color: var(--ink-dim); }
+.indicator-ref {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--ink-dim);
+  margin-top: 4px;
+  letter-spacing: 0.05em;
+}
+
+/* Exam actions */
+.exam-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.exam-btn {
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+  color: var(--ink-dim);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  padding: 8px 12px;
+  border-radius: 2px;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+.exam-btn:active { transform: scale(0.97); }
+.exam-btn.danger { color: var(--accent); border-color: var(--accent-dim); }
+
 .ia-panel {
   background: linear-gradient(180deg, var(--bg-card) 0%, var(--bg-elev) 100%);
   border: 1px solid var(--line);
@@ -1244,6 +1349,15 @@ section:nth-of-type(2) { animation-delay: 0.2s; }
   .ia-key-field input { font-size: 13px; padding: 12px 14px; }
   .ia-key-field button { font-size: 11px; padding: 0 16px; }
   details summary { font-size: 12px !important; padding: 4px 0; }
+
+  /* Indicadores */
+  .subsection-title { font-size: 20px; }
+  .indicator-name { font-size: 10px; }
+  .indicator-value { font-size: 24px; }
+  .indicator-status { font-size: 10px; padding: 4px 10px; }
+  .indicator-trend { font-size: 11px; }
+  .indicator-ref { font-size: 10px; }
+  .exam-btn { font-size: 11px; padding: 10px 14px; }
 }
 </style>
 </head>
@@ -1530,12 +1644,26 @@ section:nth-of-type(2) { animation-delay: 0.2s; }
     <input type="file" id="exameFileInput" accept="image/*,application/pdf" style="display:none;">
     <div id="exameUploadStatus" class="form-status"></div>
 
-    <div class="chart-wrap" id="examesChartWrap" style="display:none;">
-      <h5>MARCADORES <small id="examesChartRange"></small></h5>
-      <canvas id="examesChart" height="160"></canvas>
+    <div id="indicadoresSection" style="display:none;margin-top:20px;">
+      <h3 class="subsection-title">INDICADORES</h3>
+      <p class="section-sub" style="padding-left:0;">Toque num card pra ver só a evolução daquele marcador</p>
+      <div id="indicadoresList" class="indicator-grid"></div>
     </div>
 
-    <div id="examesList"></div>
+    <div class="chart-wrap" id="markerChartWrap" style="display:none; margin-top:14px;">
+      <h5>
+        <span id="markerChartTitle">MARCADOR</span>
+        <button onclick="fecharMarkerChart()" style="background:transparent;border:1px solid var(--line);color:var(--ink-dim);font-family:var(--font-mono);font-size:10px;padding:4px 10px;border-radius:2px;cursor:pointer;">FECHAR</button>
+      </h5>
+      <canvas id="markerChart" height="200"></canvas>
+    </div>
+
+    <div class="chart-wrap" id="examesChartWrap" style="display:none;margin-top:14px;">
+      <h5>TODOS MARCADORES <small id="examesChartRange"></small></h5>
+      <canvas id="examesChart" height="200"></canvas>
+    </div>
+
+    <div id="examesList" style="margin-top:14px;"></div>
 
     <div id="examesEmpty" class="empty-state" style="display:none;">
       <strong>Sem exames ainda</strong>
