@@ -907,6 +907,11 @@ section:nth-of-type(2) { animation-delay: 0.2s; }
   border-radius: 4px;
   margin-bottom: 14px;
 }
+.chart-wrap canvas {
+  width: 100% !important;
+  height: 280px !important;
+  display: block;
+}
 .chart-wrap h5 {
   font-family: var(--font-display);
   font-size: 16px;
@@ -1319,8 +1324,8 @@ section:nth-of-type(2) { animation-delay: 0.2s; }
   .indicator-trend { font-size: 11px; }
   .indicator-ref { font-size: 10px; }
 
-  /* Gráficos: mais altos pra dar pra ler */
-  #bioChart, #examesChart, #markerChart { min-height: 240px !important; }
+  /* Gráficos: altura fixa legível no mobile */
+  .chart-wrap canvas { height: 260px !important; }
 
   /* Subtítulos de seção */
   .section-sub { font-size: 13px; }
@@ -1684,7 +1689,7 @@ section:nth-of-type(2) { animation-delay: 0.2s; }
 
     <div class="chart-wrap" id="bioChartWrap" style="display:none;">
       <h5>EVOLUÇÃO <small id="bioChartRange"></small></h5>
-      <canvas id="bioChart" height="160"></canvas>
+      <canvas id="bioChart" height="280"></canvas>
     </div>
 
     <div id="bioList" style="margin-top:14px;"></div>
