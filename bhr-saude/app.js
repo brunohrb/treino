@@ -1264,6 +1264,192 @@ async function callClaude(systemPrompt, userPrompt, maxTokens = 1500) {
   return data.content?.[0]?.text || '';
 }
 
+// Claude com arquivo (imagem ou PDF) — retorna JSON extraído
+async function callClaudeWithFile(systemPrompt, userPrompt, fileBase64, mediaType, maxTokens = 3000) {
+  const key = await getClaudeKey();
+  if (!key) throw new Error('Configure sua chave Claude API primeiro.');
+  const isImage = (mediaType || '').startsWith('image/');
+  const contentBlock = isImage
+    ? { type: 'image', source: { type: 'base64', media_type: mediaType, data: fileBase64 } }
+    : { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: fileBase64 } };
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: CLAUDE_MODEL,
+      max_tokens: maxTokens,
+      system: systemPrompt,
+      messages: [
+        { role: 'user', content: [contentBlock, { type: 'text', text: userPrompt }] },
+        { role: 'assistant', content: [{ type: 'text', text: '{' }] }  // prefill pra forçar JSON
+      ]
+    })
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Claude API ${res.status}: ${err.slice(0, 300)}`);
+  }
+  const data = await res.json();
+  let texto = '{' + (data.content?.[0]?.text || '');
+  // Claude pode fechar com texto após o JSON — pega só até o último }
+  const lastBrace = texto.lastIndexOf('}');
+  if (lastBrace > 0) texto = texto.slice(0, lastBrace + 1);
+  return JSON.parse(texto);
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      // dataURL → "data:image/jpeg;base64,AAAA..." — pega só a parte depois da vírgula
+      const result = reader.result || '';
+      const idx = result.indexOf(',');
+      resolve(idx >= 0 ? result.slice(idx + 1) : result);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+// ---------- ADD: BIOIMPEDÂNCIA ---------------------------------------
+async function salvarBio(entry) {
+  if (!sb || !ironUserId) throw new Error('Faça login primeiro');
+  const novaLista = [...bioData, entry];
+  const { error } = await sb.from('bhr_bio').upsert({
+    user_id: ironUserId,
+    record_content: novaLista,
+    updated_at: new Date().toISOString()
+  }, { onConflict: 'user_id' });
+  if (error) throw error;
+  bioData = novaLista;
+  renderBio();
+}
+
+function abrirFormBio() {
+  const form = document.getElementById('formBio');
+  document.getElementById('bioData').value = todayKey();
+  form.style.display = 'block';
+  document.getElementById('btnNovaBio').style.display = 'none';
+  document.getElementById('bioFormStatus').className = 'form-status';
+  document.getElementById('bioFormStatus').textContent = '';
+  document.getElementById('bioPeso').focus();
+}
+
+function fecharFormBio() {
+  document.getElementById('formBio').style.display = 'none';
+  document.getElementById('btnNovaBio').style.display = 'block';
+  document.getElementById('formBio').reset();
+}
+
+async function handleSalvarBio(ev) {
+  ev.preventDefault();
+  const data = document.getElementById('bioData').value;
+  const peso = parseFloat(document.getElementById('bioPeso').value);
+  const gordura = parseFloat(document.getElementById('bioGordura').value);
+  const massa = parseFloat(document.getElementById('bioMassa').value);
+  const agua = parseFloat(document.getElementById('bioAgua').value);
+  const altura = 1.76;
+  const imc = (peso / (altura * altura)).toFixed(1);
+  const status = document.getElementById('bioFormStatus');
+
+  if (!data || isNaN(peso) || isNaN(gordura) || isNaN(massa) || isNaN(agua)) {
+    status.className = 'form-status error';
+    status.textContent = 'Preencha todos os campos';
+    return;
+  }
+
+  status.className = 'form-status loading';
+  status.textContent = 'Salvando no Supabase...';
+  try {
+    await salvarBio({ data, peso, gordura, massa, agua, imc });
+    status.className = 'form-status success';
+    status.textContent = '✓ Salvo!';
+    setTimeout(fecharFormBio, 800);
+  } catch (e) {
+    status.className = 'form-status error';
+    status.textContent = 'Erro: ' + e.message;
+  }
+}
+
+// ---------- ADD: EXAME (Claude Vision) -------------------------------
+async function handleUploadExame(file) {
+  const statusEl = document.getElementById('exameUploadStatus');
+  const btn = document.getElementById('btnNovoExame');
+  const setStatus = (txt, cls = 'loading') => {
+    statusEl.className = 'form-status ' + cls;
+    statusEl.textContent = txt;
+  };
+  btn.disabled = true;
+  try {
+    setStatus('Lendo arquivo...');
+    const base64 = await fileToBase64(file);
+    const mediaType = file.type || (file.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
+
+    setStatus('Claude analisando o exame (30-60s)...');
+    const system = `Você é um médico especialista em análise de exames laboratoriais.
+Analise a imagem ou PDF do exame recebido e retorne APENAS um objeto JSON válido (sem texto antes/depois, sem markdown), no formato:
+
+{
+  "tipo": "Hemograma completo" (ou "Perfil lipídico", "Glicemia", "Função hepática", "Função renal", "Hormônios", etc conforme o exame),
+  "data": "YYYY-MM-DD" (data da coleta; se não achar, usa "${todayKey()}"),
+  "analise_geral": "Texto 100-200 palavras em PT-BR: o que está normal, o que tem atenção, recomendações práticas. Sem disclaimer médico longo.",
+  "resultados_principais": [
+    { "parametro": "Hemoglobina", "valor": "15.2 g/dL", "referencia": "13.5-17.5", "status": "normal" },
+    { "parametro": "Colesterol total", "valor": "220 mg/dL", "referencia": "<200", "status": "alto" }
+  ]
+}
+
+Regras:
+- status só pode ser: "normal", "baixo", "alto", "atencao"
+- inclua até 20 marcadores principais (os mais relevantes)
+- use exatamente os valores do exame, não invente
+- se o arquivo não for um exame laboratorial válido, retorne { "erro": "não é um exame" }`;
+
+    const result = await callClaudeWithFile(system, 'Analise este exame e retorne o JSON.', base64, mediaType, 3000);
+
+    if (result.erro) {
+      setStatus('Arquivo não parece um exame laboratorial: ' + result.erro, 'error');
+      btn.disabled = false;
+      return;
+    }
+
+    const novoExame = {
+      id: Date.now(),
+      data: result.data || todayKey(),
+      tipo: result.tipo || 'Exame',
+      arquivo: file.name,
+      analiseIA: {
+        analise_geral: result.analise_geral || '',
+        resultados_principais: result.resultados_principais || []
+      }
+    };
+
+    setStatus('Salvando no Supabase...');
+    const novaLista = [...examesData, novoExame];
+    const { error } = await sb.from('bhr_exames').upsert({
+      user_id: ironUserId,
+      record_content: novaLista,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'user_id' });
+    if (error) throw error;
+    examesData = novaLista;
+    renderExames();
+    setStatus(`✓ ${novoExame.tipo} salvo (${novoExame.analiseIA.resultados_principais.length} marcadores)`, 'success');
+    setTimeout(() => { statusEl.textContent = ''; statusEl.className = 'form-status'; }, 4000);
+  } catch (e) {
+    console.error(e);
+    setStatus('Erro: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    document.getElementById('exameFileInput').value = '';
+  }
+}
+
 function contextoSaude() {
   const bioOrd = [...bioData].sort((a, b) => new Date(a.data) - new Date(b.data));
   const bioAtual = bioOrd[bioOrd.length - 1];
@@ -1362,6 +1548,20 @@ async function gerarDieta() {
 // ---------- SAÚDE WIRING --------------------------------------------
 document.getElementById('btnEntrar').onclick = handleEntrar;
 document.getElementById('btnLogout').onclick = handleSair;
+
+// Bio form
+document.getElementById('btnNovaBio').onclick = abrirFormBio;
+document.getElementById('btnCancelarBio').onclick = fecharFormBio;
+document.getElementById('formBio').addEventListener('submit', handleSalvarBio);
+
+// Exame upload
+document.getElementById('btnNovoExame').onclick = () => {
+  document.getElementById('exameFileInput').click();
+};
+document.getElementById('exameFileInput').addEventListener('change', (ev) => {
+  const f = ev.target.files?.[0];
+  if (f) handleUploadExame(f);
+});
 document.getElementById('authSenha').addEventListener('keydown', e => { if (e.key === 'Enter') handleEntrar(); });
 
 const iaKeyInput = document.getElementById('iaKey');
