@@ -678,3 +678,424 @@ updateProgress();
 updateSplitToggle();
 updateReadinessDisplay();
 updateDeloadBadge();
+
+// ====================================================================
+// SAÚDE — integração Supabase (reusa bhr_exames e bhr_bio do app BHR)
+// ====================================================================
+const SUPABASE_URL = 'https://hisbbtddpoxufvghxqtm.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhpc2JidGRkcG94dWZ2Z2h4cXRtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIyMDM0OTgsImV4cCI6MjA4Nzc3OTQ5OH0.r3VkLkBxeorkCYjB-y6WOchePdfRKsm5lWE1iSSYlrw';
+
+let sb = null;
+let ironUser = null;
+let ironUserId = null;
+let bioData = [];
+let examesData = [];
+let bioChart = null;
+let examesChart = null;
+
+function initSupabase() {
+  if (typeof window.supabase === 'undefined') { setTimeout(initSupabase, 120); return; }
+  try {
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { db: { schema: 'treino' } });
+    restoreSession();
+  } catch (e) { console.error('Supabase init falhou:', e); }
+}
+
+// Mesma função que o BHR usa: nome → email interno
+function nomeParaEmail(nome) {
+  const limpo = (nome || '').toString().trim().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]/g, '');
+  return limpo ? `${limpo}@bhr.treino` : '';
+}
+
+async function restoreSession() {
+  if (!sb) return;
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session && session.user) {
+      ironUser = session.user;
+      ironUserId = session.user.id;
+      onLogado();
+    }
+  } catch (e) { console.warn('Sessão não recuperada:', e); }
+}
+
+function setAuthStatus(msg, type) {
+  const el = document.getElementById('authStatus');
+  if (!el) return;
+  el.textContent = msg || '';
+  el.className = 'auth-status' + (type ? ' ' + type : '');
+}
+
+async function handleEntrar() {
+  if (!sb) { setAuthStatus('Aguardando Supabase...', 'error'); return; }
+  const nome = document.getElementById('authNome').value.trim();
+  const senha = document.getElementById('authSenha').value;
+  const email = nomeParaEmail(nome);
+  if (!email || !senha) { setAuthStatus('Preencha nome e senha', 'error'); return; }
+  setAuthStatus('Entrando...', '');
+  try {
+    const { data, error } = await sb.auth.signInWithPassword({ email, password: senha });
+    if (error) { setAuthStatus('Erro: ' + error.message, 'error'); return; }
+    ironUser = data.user;
+    ironUserId = data.user.id;
+    setAuthStatus('Conectado!', 'success');
+    onLogado();
+  } catch (e) { setAuthStatus('Falha: ' + e.message, 'error'); }
+}
+
+async function handleSair() {
+  if (!sb) return;
+  try { await sb.auth.signOut(); } catch {}
+  ironUser = null; ironUserId = null;
+  bioData = []; examesData = [];
+  if (bioChart) { bioChart.destroy(); bioChart = null; }
+  if (examesChart) { examesChart.destroy(); examesChart = null; }
+  document.getElementById('syncBar').style.display = 'none';
+  document.getElementById('authCard').style.display = 'block';
+  document.getElementById('saudeConteudo').style.display = 'none';
+}
+
+function onLogado() {
+  document.getElementById('authCard').style.display = 'none';
+  document.getElementById('saudeConteudo').style.display = 'block';
+  document.getElementById('syncBar').style.display = 'flex';
+  const nome = (ironUser.email || '').replace('@bhr.treino', '');
+  document.getElementById('syncUser').textContent = nome.toUpperCase();
+  carregarSaude();
+}
+
+async function carregarSaude() {
+  if (!sb || !ironUserId) return;
+  try {
+    const { data: bioRow } = await sb.from('bhr_bio')
+      .select('record_content').eq('user_id', ironUserId).maybeSingle();
+    bioData = Array.isArray(bioRow?.record_content) ? bioRow.record_content : [];
+    const { data: exRow } = await sb.from('bhr_exames')
+      .select('record_content').eq('user_id', ironUserId).maybeSingle();
+    examesData = Array.isArray(exRow?.record_content) ? exRow.record_content : [];
+    renderBio();
+    renderExames();
+  } catch (e) { console.error('Erro ao carregar saúde:', e); }
+}
+
+// ---------- BIO RENDER ----------------------------------------------
+function renderBio() {
+  const metricsEl = document.getElementById('bioMetrics');
+  const wrapEl = document.getElementById('bioChartWrap');
+  const emptyEl = document.getElementById('bioEmpty');
+  if (!bioData || bioData.length === 0) {
+    metricsEl.innerHTML = '';
+    wrapEl.style.display = 'none';
+    emptyEl.style.display = 'block';
+    return;
+  }
+  emptyEl.style.display = 'none';
+  const ordenado = [...bioData].sort((a, b) => new Date(a.data) - new Date(b.data));
+  const atual = ordenado[ordenado.length - 1];
+  const anterior = ordenado.length > 1 ? ordenado[ordenado.length - 2] : null;
+
+  function delta(campo, invertido = false) {
+    if (!anterior) return { txt: '—', cls: 'neutral' };
+    const d = parseFloat(atual[campo]) - parseFloat(anterior[campo]);
+    if (Math.abs(d) < 0.05) return { txt: '0', cls: 'neutral' };
+    const sign = d > 0 ? '+' : '';
+    // pra gordura subir é ruim; pra massa subir é bom
+    const good = invertido ? d < 0 : d > 0;
+    return { txt: `${sign}${d.toFixed(1)}`, cls: good ? 'down' : 'up' };
+  }
+
+  const dPeso = delta('peso', true);
+  const dGord = delta('gordura', true);
+  const dMassa = delta('massa', false);
+  const dAgua = delta('agua', false);
+
+  metricsEl.innerHTML = `
+    <div class="metric-card">
+      <div class="metric-value">${atual.peso || '—'}<span class="metric-unit">kg</span></div>
+      <div class="metric-label">Peso</div>
+      <div class="metric-delta ${dPeso.cls}">${dPeso.txt}</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value">${atual.gordura || '—'}<span class="metric-unit">%</span></div>
+      <div class="metric-label">Gordura</div>
+      <div class="metric-delta ${dGord.cls}">${dGord.txt}</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value">${atual.massa || '—'}<span class="metric-unit">kg</span></div>
+      <div class="metric-label">Massa</div>
+      <div class="metric-delta ${dMassa.cls}">${dMassa.txt}</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value">${atual.agua || '—'}<span class="metric-unit">%</span></div>
+      <div class="metric-label">Água</div>
+      <div class="metric-delta ${dAgua.cls}">${dAgua.txt}</div>
+    </div>
+  `;
+
+  wrapEl.style.display = 'block';
+  const range = ordenado.length > 1
+    ? `${new Date(ordenado[0].data).toLocaleDateString('pt-BR')} → ${new Date(atual.data).toLocaleDateString('pt-BR')}`
+    : new Date(atual.data).toLocaleDateString('pt-BR');
+  document.getElementById('bioChartRange').textContent = range;
+
+  const labels = ordenado.map(b => new Date(b.data).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }));
+  const ds = [
+    { label: 'Peso (kg)', data: ordenado.map(b => +b.peso || null), borderColor: '#ff2d2d', backgroundColor: 'rgba(255,45,45,0.1)', tension: 0.35, yAxisID: 'y' },
+    { label: 'Gordura (%)', data: ordenado.map(b => +b.gordura || null), borderColor: '#ffb020', backgroundColor: 'rgba(255,176,32,0.1)', tension: 0.35, yAxisID: 'y1' },
+    { label: 'Massa (kg)', data: ordenado.map(b => +b.massa || null), borderColor: '#00d97e', backgroundColor: 'rgba(0,217,126,0.1)', tension: 0.35, yAxisID: 'y' },
+  ];
+  if (bioChart) bioChart.destroy();
+  bioChart = new Chart(document.getElementById('bioChart'), {
+    type: 'line',
+    data: { labels, datasets: ds },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { labels: { color: '#8a8a85', font: { size: 10, family: 'JetBrains Mono' } } } },
+      scales: {
+        x: { ticks: { color: '#8a8a85', font: { size: 9 } }, grid: { color: 'rgba(42,42,42,0.5)' } },
+        y: { position: 'left', ticks: { color: '#8a8a85', font: { size: 9 } }, grid: { color: 'rgba(42,42,42,0.5)' } },
+        y1: { position: 'right', ticks: { color: '#ffb020', font: { size: 9 } }, grid: { drawOnChartArea: false } }
+      }
+    }
+  });
+}
+
+// ---------- EXAMES RENDER -------------------------------------------
+function renderExames() {
+  const listEl = document.getElementById('examesList');
+  const wrapEl = document.getElementById('examesChartWrap');
+  const emptyEl = document.getElementById('examesEmpty');
+
+  if (!examesData || examesData.length === 0) {
+    listEl.innerHTML = '';
+    wrapEl.style.display = 'none';
+    emptyEl.style.display = 'block';
+    return;
+  }
+  emptyEl.style.display = 'none';
+  const ordenado = [...examesData].sort((a, b) => new Date(b.data) - new Date(a.data));
+
+  listEl.innerHTML = ordenado.slice(0, 8).map(e => {
+    const temIA = e.analiseIA && e.analiseIA.analise_geral;
+    const resumo = temIA ? e.analiseIA.analise_geral : (e.resultados || 'Sem análise');
+    return `
+      <div class="exam-item">
+        <div class="exam-head">
+          <div class="exam-type">${(e.tipo || 'Exame').toUpperCase()}</div>
+          <div class="exam-date">${new Date(e.data).toLocaleDateString('pt-BR')}</div>
+        </div>
+        ${e.arquivo ? `<div style="font-family:var(--font-mono);font-size:10px;color:var(--accent);letter-spacing:0.08em;">${e.arquivo}</div>` : ''}
+        <div class="exam-ia">${resumo}</div>
+      </div>
+    `;
+  }).join('');
+
+  // gráfico: agrupa marcadores principais
+  const comIA = ordenado.filter(e => e.analiseIA && e.analiseIA.resultados_principais);
+  if (comIA.length < 2) { wrapEl.style.display = 'none'; return; }
+
+  const parametros = {};
+  comIA.forEach(e => {
+    e.analiseIA.resultados_principais.forEach(r => {
+      const v = parseFloat((r.valor || '').toString().match(/[\d.]+/)?.[0]);
+      if (isNaN(v)) return;
+      if (!parametros[r.parametro]) parametros[r.parametro] = [];
+      parametros[r.parametro].push({ data: e.data, valor: v });
+    });
+  });
+
+  const topParametros = Object.keys(parametros).slice(0, 5);
+  if (topParametros.length === 0) { wrapEl.style.display = 'none'; return; }
+
+  wrapEl.style.display = 'block';
+  const datas = [...new Set(comIA.map(e => e.data))].sort((a, b) => new Date(a) - new Date(b));
+  const labels = datas.map(d => new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }));
+  const cores = ['#ff2d2d', '#ffb020', '#00d97e', '#8a8afc', '#fc6e9b'];
+  const datasets = topParametros.map((p, i) => ({
+    label: p,
+    data: datas.map(d => {
+      const entry = parametros[p].find(x => x.data === d);
+      return entry ? entry.valor : null;
+    }),
+    borderColor: cores[i],
+    backgroundColor: cores[i] + '20',
+    tension: 0.35,
+    spanGaps: true
+  }));
+
+  document.getElementById('examesChartRange').textContent = `${labels[0]} → ${labels[labels.length - 1]}`;
+  if (examesChart) examesChart.destroy();
+  examesChart = new Chart(document.getElementById('examesChart'), {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { labels: { color: '#8a8a85', font: { size: 10, family: 'JetBrains Mono' } } } },
+      scales: {
+        x: { ticks: { color: '#8a8a85', font: { size: 9 } }, grid: { color: 'rgba(42,42,42,0.5)' } },
+        y: { ticks: { color: '#8a8a85', font: { size: 9 } }, grid: { color: 'rgba(42,42,42,0.5)' } }
+      }
+    }
+  });
+}
+
+// ====================================================================
+// CLAUDE API — análise IA + geração de treino/dieta
+// ====================================================================
+const CLAUDE_KEY_STORAGE = 'iron-claude-key';
+const CLAUDE_MODEL = 'claude-sonnet-4-6';
+
+function getClaudeKey() { return localStorage.getItem(CLAUDE_KEY_STORAGE) || ''; }
+function setClaudeKey(k) { localStorage.setItem(CLAUDE_KEY_STORAGE, k); }
+
+async function callClaude(systemPrompt, userPrompt, maxTokens = 1500) {
+  const key = getClaudeKey();
+  if (!key) throw new Error('Configure sua chave Claude API primeiro (expanda "CONFIGURAR CHAVE" acima).');
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: CLAUDE_MODEL,
+      max_tokens: maxTokens,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userPrompt }]
+    })
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Claude API ${res.status}: ${err.slice(0, 200)}`);
+  }
+  const data = await res.json();
+  return data.content?.[0]?.text || '';
+}
+
+function contextoSaude() {
+  const bioOrd = [...bioData].sort((a, b) => new Date(a.data) - new Date(b.data));
+  const bioAtual = bioOrd[bioOrd.length - 1];
+  const bioPrimeiro = bioOrd[0];
+  const examesOrd = [...examesData].sort((a, b) => new Date(b.data) - new Date(a.data)).slice(0, 3);
+
+  let texto = `# DADOS DO ATLETA\n`;
+  texto += `Bruno · 40 anos · 1.76m · protocolo hipertrofia · split ${state.split} · semana ${state.weekNumber}${isDeloadWeek() ? ' (DELOAD)' : ''}\n\n`;
+
+  if (bioAtual) {
+    texto += `# BIOIMPEDÂNCIA ATUAL (${new Date(bioAtual.data).toLocaleDateString('pt-BR')})\n`;
+    texto += `Peso: ${bioAtual.peso}kg · Gordura: ${bioAtual.gordura}% · Massa muscular: ${bioAtual.massa}kg · IMC: ${bioAtual.imc} · Água: ${bioAtual.agua}%\n`;
+    if (bioPrimeiro && bioPrimeiro !== bioAtual) {
+      texto += `Primeira medição (${new Date(bioPrimeiro.data).toLocaleDateString('pt-BR')}): Peso ${bioPrimeiro.peso}kg, Gordura ${bioPrimeiro.gordura}%, Massa ${bioPrimeiro.massa}kg\n`;
+      texto += `Δ: peso ${(bioAtual.peso - bioPrimeiro.peso).toFixed(1)}kg · gordura ${(bioAtual.gordura - bioPrimeiro.gordura).toFixed(1)}% · massa ${(bioAtual.massa - bioPrimeiro.massa).toFixed(1)}kg\n`;
+    }
+    texto += `Total de medições: ${bioOrd.length}\n\n`;
+  } else {
+    texto += `# BIOIMPEDÂNCIA: sem dados\n\n`;
+  }
+
+  if (examesOrd.length > 0) {
+    texto += `# ÚLTIMOS EXAMES (${examesOrd.length})\n`;
+    examesOrd.forEach(e => {
+      texto += `\n## ${e.tipo || 'Exame'} — ${new Date(e.data).toLocaleDateString('pt-BR')}\n`;
+      if (e.analiseIA?.analise_geral) texto += `Análise: ${e.analiseIA.analise_geral}\n`;
+      if (e.analiseIA?.resultados_principais) {
+        e.analiseIA.resultados_principais.forEach(r => {
+          texto += `- ${r.parametro}: ${r.valor}${r.status ? ` (${r.status})` : ''}${r.referencia ? ` · ref: ${r.referencia}` : ''}\n`;
+        });
+      } else if (e.resultados) {
+        texto += e.resultados.slice(0, 300) + '\n';
+      }
+    });
+    texto += `\n`;
+  } else {
+    texto += `# EXAMES: sem dados\n\n`;
+  }
+
+  const rToday = state.readiness[todayKey()];
+  if (rToday) {
+    texto += `# PRONTIDÃO HOJE: ${rToday.score}/100 (sono ${rToday.sleep}, energia ${rToday.energy}, dor ${rToday.soreness}, humor ${rToday.mood})\n`;
+  }
+  return texto;
+}
+
+function showIaOutput(txt) {
+  const out = document.getElementById('iaOutput');
+  out.textContent = txt;
+  out.classList.add('show');
+}
+
+function setIaLoading(on, msg) {
+  const out = document.getElementById('iaOutput');
+  document.querySelectorAll('.ia-btn').forEach(b => b.disabled = on);
+  if (on) { out.textContent = msg || 'Consultando Claude...'; out.classList.add('show'); }
+}
+
+async function analisarSaude() {
+  if (!bioData.length && !examesData.length) {
+    showIaOutput('Sem bio/exames ainda. Registre no app BHR antes.');
+    return;
+  }
+  setIaLoading(true, 'Analisando seus exames + bio...');
+  try {
+    const system = `Você é um médico esportivo experiente. Responda em PT-BR, direto e prático, máximo 250 palavras. Aponte 3-5 pontos de atenção concretos baseados nos dados, e uma recomendação acionável para o treino/dieta atual. Evite disclaimers médicos longos.`;
+    const user = contextoSaude() + `\n# TAREFA\nAnalise os dados acima e me diga: 1) o que está bom, 2) pontos de atenção, 3) 1-2 ajustes práticos no meu treino/dieta atual.`;
+    const resp = await callClaude(system, user, 1200);
+    showIaOutput(resp);
+  } catch (e) { showIaOutput('Erro: ' + e.message); }
+  finally { setIaLoading(false); }
+}
+
+async function gerarTreino() {
+  setIaLoading(true, 'Gerando novo treino baseado nos seus dados...');
+  try {
+    const system = `Você é um personal trainer especializado em hipertrofia masculina. Responda em PT-BR. Proponha uma divisão de 6 dias (ou 5 se os dados sugerirem recuperação limitada) adequada ao atleta, considerando bio e exames. Formato: para cada dia, título + 6-10 exercícios com séries e descanso. Máximo 400 palavras. Não repita a divisão atual cegamente — justifique UMA mudança importante no começo.`;
+    const user = contextoSaude() + `\n# DIVISÃO ATUAL\n${state.split === '6d' ? 'PUSH/PULL/LEGS A/OMB/BRAÇO/LEGS B (6 dias)' : 'PUSH/PULL/OMB/BRAÇO/LEGS FULL (5 dias)'}\n\n# TAREFA\nProponha um novo plano de treino semanal otimizado para meus dados. Comece com UMA justificativa curta baseada em algum marcador específico dos exames ou da bio.`;
+    const resp = await callClaude(system, user, 2000);
+    showIaOutput(resp);
+  } catch (e) { showIaOutput('Erro: ' + e.message); }
+  finally { setIaLoading(false); }
+}
+
+async function gerarDieta() {
+  setIaLoading(true, 'Gerando nova dieta...');
+  try {
+    const system = `Você é um nutricionista esportivo. Responda em PT-BR. Proponha um plano alimentar de 5 refeições adaptado aos dados (especial atenção a marcadores metabólicos se existirem). Calcule kcal e macros totais realistas para o atleta. Formato: target diário + 5 refeições com horário, itens e macros. Máximo 400 palavras. Comece com UMA linha justificando o calórico escolhido.`;
+    const user = contextoSaude() + `\n# DIETA ATUAL\n3000kcal · 180g proteína · 375g carbo · 80g gordura\n\n# TAREFA\nProponha nova dieta otimizada. Justifique o ajuste calórico com base em algo concreto dos dados (ex: gordura subindo, massa parada, colesterol, glicemia, etc).`;
+    const resp = await callClaude(system, user, 2000);
+    showIaOutput(resp);
+  } catch (e) { showIaOutput('Erro: ' + e.message); }
+  finally { setIaLoading(false); }
+}
+
+// ---------- SAÚDE WIRING --------------------------------------------
+document.getElementById('btnEntrar').onclick = handleEntrar;
+document.getElementById('btnLogout').onclick = handleSair;
+document.getElementById('authSenha').addEventListener('keydown', e => { if (e.key === 'Enter') handleEntrar(); });
+
+const iaKeyInput = document.getElementById('iaKey');
+iaKeyInput.value = getClaudeKey();
+document.getElementById('btnSalvarKey').onclick = () => {
+  setClaudeKey(iaKeyInput.value.trim());
+  const btn = document.getElementById('btnSalvarKey');
+  const orig = btn.textContent;
+  btn.textContent = 'SALVO';
+  setTimeout(() => btn.textContent = orig, 1200);
+};
+
+document.getElementById('btnAnalisarSaude').onclick = analisarSaude;
+document.getElementById('btnGerarTreino').onclick = gerarTreino;
+document.getElementById('btnGerarDieta').onclick = gerarDieta;
+document.getElementById('btnLimparIA').onclick = () => {
+  document.getElementById('iaOutput').classList.remove('show');
+  document.getElementById('iaOutput').textContent = '';
+};
+
+initSupabase();
