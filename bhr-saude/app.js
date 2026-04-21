@@ -1434,7 +1434,8 @@ function renderExames() {
 // Chave armazenada em Supabase (tabela bhr_config, RLS por user_id).
 // Nunca em localStorage nem commitada no git.
 // ====================================================================
-const CLAUDE_MODEL = 'claude-sonnet-4-6';
+const CLAUDE_MODEL = 'claude-sonnet-4-6';                   // análises de texto (saúde, treino, dieta)
+const CLAUDE_VISION_MODEL = 'claude-haiku-4-5-20251001';    // extração de arquivos (mais barato, rate limit maior)
 let claudeKeyCache = null;  // cache em memória após 1ª leitura
 
 async function getClaudeKey() {
@@ -1491,7 +1492,34 @@ async function callClaude(systemPrompt, userPrompt, maxTokens = 1500) {
   return data.content?.[0]?.text || '';
 }
 
+// Redimensiona imagem grande pra evitar rate limit do Claude
+async function resizeImageFile(file, maxDim = 1600, quality = 0.78) {
+  if (!file.type || !file.type.startsWith('image/')) return file;
+  try {
+    const bitmap = await createImageBitmap(file);
+    let { width, height } = bitmap;
+    if (width <= maxDim && height <= maxDim && file.size < 600 * 1024) {
+      bitmap.close();
+      return file;
+    }
+    const ratio = Math.min(maxDim / width, maxDim / height, 1);
+    width = Math.round(width * ratio);
+    height = Math.round(height * ratio);
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    canvas.getContext('2d').drawImage(bitmap, 0, 0, width, height);
+    bitmap.close();
+    const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', quality));
+    return new File([blob], file.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' });
+  } catch (e) {
+    console.warn('Resize falhou, usando original:', e);
+    return file;
+  }
+}
+
 // Claude com arquivo (imagem ou PDF) — retorna JSON extraído
+// Usa CLAUDE_VISION_MODEL (Haiku 4.5 — mais barato/rápido/maior rate limit)
 async function callClaudeWithFile(systemPrompt, userPrompt, fileBase64, mediaType, maxTokens = 3000) {
   const key = await getClaudeKey();
   if (!key) throw new Error('Configure sua chave Claude API primeiro.');
@@ -1508,7 +1536,7 @@ async function callClaudeWithFile(systemPrompt, userPrompt, fileBase64, mediaTyp
       'anthropic-dangerous-direct-browser-access': 'true'
     },
     body: JSON.stringify({
-      model: CLAUDE_MODEL,
+      model: CLAUDE_VISION_MODEL,
       max_tokens: maxTokens,
       system: systemPrompt,
       messages: [
@@ -1518,6 +1546,10 @@ async function callClaudeWithFile(systemPrompt, userPrompt, fileBase64, mediaTyp
   });
   if (!res.ok) {
     const err = await res.text();
+    if (res.status === 429) {
+      const retryAfter = res.headers.get('retry-after') || '60';
+      throw new Error(`Taxa de uso da API atingida. Espera ${retryAfter}s e tenta de novo. Se acontecer sempre, aumenta o Tier em console.anthropic.com/settings/limits (deposita $5 pra ir pro Tier 2 e o limite quintuplica).`);
+    }
     throw new Error(`Claude API ${res.status}: ${err.slice(0, 300)}`);
   }
   const data = await res.json();
@@ -1621,8 +1653,10 @@ async function handleUploadBio(file) {
   btn.disabled = true;
   try {
     setStatus('Lendo arquivo...');
-    const base64 = await fileToBase64(file);
-    const mediaType = file.type || (file.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
+    // Comprime imagens grandes antes de mandar pra API (economiza tokens e evita rate limit)
+    const fileParaEnviar = await resizeImageFile(file, 1600, 0.78);
+    const base64 = await fileToBase64(fileParaEnviar);
+    const mediaType = fileParaEnviar.type || (fileParaEnviar.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
 
     setStatus('Subindo arquivo e analisando bioimpedância...');
     let arquivoPath = null;
@@ -1715,8 +1749,10 @@ async function handleUploadExame(file) {
   btn.disabled = true;
   try {
     setStatus('Lendo arquivo...');
-    const base64 = await fileToBase64(file);
-    const mediaType = file.type || (file.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
+    // Comprime imagens grandes antes de mandar pra API (economiza tokens e evita rate limit)
+    const fileParaEnviar = await resizeImageFile(file, 1600, 0.78);
+    const base64 = await fileToBase64(fileParaEnviar);
+    const mediaType = fileParaEnviar.type || (fileParaEnviar.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
 
     // Upload em paralelo: storage + análise
     setStatus('Subindo arquivo e analisando (30-60s)...');
