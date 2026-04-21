@@ -1,7 +1,7 @@
 {
-  "name": "IRON — Protocolo Hipertrofia",
-  "short_name": "IRON",
-  "description": "Protocolo de hipertrofia com foco superior · 7 dias",
+  "name": "BHR Saúde",
+  "short_name": "BHR Saúde",
+  "description": "Treino · Dieta · Readiness · Saúde (exames + bio + IA)",
   "start_url": "./index.html",
   "display": "standalone",
   "orientation": "portrait",
