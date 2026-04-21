@@ -50,8 +50,8 @@ const WORKOUTS = {
   },
   pull1: {
     title: 'COSTAS · BÍCEPS',
-    duration: '60-70min',
-    volume: '23 séries',
+    duration: '75-85min',
+    volume: '23 séries + cardio',
     exercises: [
       { name: 'Barra fixa (pegada aberta)', sets: '4xAMRAP', detail: 'Descanso 90s · Alternativa: puxada 4x8-10' },
       { name: 'Remada curvada barra', sets: '4x8-10', detail: 'Descanso 90s · Pegada pronada' },
@@ -61,7 +61,8 @@ const WORKOUTS = {
       { name: 'Pullover polia alta', sets: '3x15', detail: 'Descanso 45s · Alongamento máximo' },
       { name: 'Rosca direta barra W', sets: '4x8-10', detail: 'Descanso 75s · Sem balançar' },
       { name: 'Rosca alternada halteres', sets: '3x10-12', detail: 'Descanso 60s · Supinação completa' },
-      { name: 'Rosca martelo', sets: '3x12', detail: 'Descanso 45s · Braquial + antebraço' }
+      { name: 'Rosca martelo', sets: '3x12', detail: 'Descanso 45s · Braquial + antebraço' },
+      { name: 'CARDIO — Esteira/bike LISS', sets: '20min', detail: 'Zona 2 · FC 120-135 · pós-treino' }
     ]
   },
   legs1: {
@@ -80,8 +81,8 @@ const WORKOUTS = {
   },
   shoulders: {
     title: 'OMBRO · TRAPÉZIO',
-    duration: '60min',
-    volume: '22 séries',
+    duration: '75-80min',
+    volume: '22 séries + cardio',
     exercises: [
       { name: 'Desenvolvimento militar barra', sets: '4x8-10', detail: 'Descanso 90s' },
       { name: 'Desenvolvimento halteres', sets: '4x10-12', detail: 'Descanso 75s · Sentado' },
@@ -90,7 +91,8 @@ const WORKOUTS = {
       { name: 'Elevação frontal halter/anilha', sets: '3x12', detail: 'Descanso 45s' },
       { name: 'Crucifixo invertido (peck deck)', sets: '4x12-15', detail: 'Descanso 60s · Deltoide posterior' },
       { name: 'Encolhimento halteres', sets: '4x12-15', detail: 'Descanso 60s · Pausa 1s topo' },
-      { name: 'Remada alta cabo', sets: '3x12', detail: 'Descanso 45s · Pegada fechada' }
+      { name: 'Remada alta cabo', sets: '3x12', detail: 'Descanso 45s · Pegada fechada' },
+      { name: 'CARDIO — Esteira/bike LISS', sets: '20min', detail: 'Zona 2 · FC 120-135 · pós-treino' }
     ]
   },
   arms: {
