@@ -1294,6 +1294,34 @@ section:nth-of-type(2) { animation-delay: 0.2s; }
   .tab-icon { font-size: 24px; }
   .tabbar { padding: 12px 0 calc(12px + env(safe-area-inset-bottom)); }
 
+  /* Bio: métricas em 2 colunas (em vez de 4 amontoadas) */
+  .metric-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .metric-card { padding: 16px 14px; }
+  .metric-value { font-size: 28px; }
+  .metric-unit { font-size: 13px; }
+  .metric-label { font-size: 11px; margin-top: 8px; }
+  .metric-delta { font-size: 12px; margin-top: 4px; }
+
+  /* Histórico bio: empilha data + tags (em vez de lado a lado) */
+  .bio-item { padding: 14px 16px; }
+  .bio-item-head { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .bio-item-date { font-size: 16px; }
+  .bio-item-tags { font-size: 12px; gap: 6px; }
+  .bio-item-tags span { padding: 4px 8px; }
+  .bio-item-obs { font-size: 13px; }
+
+  /* Indicadores: 2 colunas (em vez de 4) */
+  .indicator-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .indicator-card { padding: 14px 12px 12px; }
+  .indicator-name { font-size: 10px; }
+  .indicator-value { font-size: 26px; }
+  .indicator-status { font-size: 10px; padding: 4px 10px; }
+  .indicator-trend { font-size: 11px; }
+  .indicator-ref { font-size: 10px; }
+
+  /* Gráficos: mais altos pra dar pra ler */
+  #bioChart, #examesChart, #markerChart { min-height: 240px !important; }
+
   /* Subtítulos de seção */
   .section-sub { font-size: 13px; }
   .section-title { font-size: 32px; }
@@ -1364,9 +1392,6 @@ section:nth-of-type(2) { animation-delay: 0.2s; }
   .auth-status { font-size: 12px; }
   .sync-bar { font-size: 12px; }
   .sync-bar button { font-size: 11px; padding: 8px 12px; }
-  .metric-value { font-size: 24px; }
-  .metric-label { font-size: 10px; }
-  .metric-delta { font-size: 11px; }
   .chart-wrap h5 { font-size: 18px; }
   .chart-wrap h5 small { font-size: 10px; }
   .exam-item .exam-type { font-size: 18px; }
@@ -1381,14 +1406,7 @@ section:nth-of-type(2) { animation-delay: 0.2s; }
   .ia-key-field input { font-size: 13px; padding: 12px 14px; }
   .ia-key-field button { font-size: 11px; padding: 0 16px; }
   details summary { font-size: 12px !important; padding: 4px 0; }
-
-  /* Indicadores */
   .subsection-title { font-size: 20px; }
-  .indicator-name { font-size: 10px; }
-  .indicator-value { font-size: 24px; }
-  .indicator-status { font-size: 10px; padding: 4px 10px; }
-  .indicator-trend { font-size: 11px; }
-  .indicator-ref { font-size: 10px; }
   .exam-btn { font-size: 11px; padding: 10px 14px; }
 }
 </style>

@@ -1619,7 +1619,7 @@ async function handleSalvarBio(ev) {
   const gordura = parseFloat(document.getElementById('bioGordura').value);
   const massa = parseFloat(document.getElementById('bioMassa').value);
   const agua = parseFloat(document.getElementById('bioAgua').value);
-  const altura = 1.76;
+  const altura = 1.74;
   const imc = (peso / (altura * altura)).toFixed(1);
   const status = document.getElementById('bioFormStatus');
 
@@ -1688,7 +1688,7 @@ Se o arquivo não for um resultado de bioimpedância, retorne { "erro": "motivo"
       return;
     }
 
-    const altura = 1.76;
+    const altura = 1.74;
     const imc = (result.peso / (altura * altura)).toFixed(1);
     const novaEntry = {
       id: Date.now(),
