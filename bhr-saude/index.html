@@ -1057,10 +1057,105 @@ section:nth-of-type(2) { animation-delay: 0.2s; }
   .macros-grid { grid-template-columns: repeat(2, 1fr); }
   .metric-grid { grid-template-columns: repeat(2, 1fr); }
   .week-grid { gap: 4px; }
-  .day-focus { font-size: 11px; }
-  .brand-name { font-size: 36px; }
-  .tab { font-size: 7px; }
+  .day-focus { font-size: 13px; }
+  .brand-name { font-size: 38px; }
   .ia-btns { grid-template-columns: 1fr; }
+}
+
+/* ===== AUMENTAR LEGIBILIDADE MOBILE ===== */
+@media (max-width: 768px) {
+  /* Tab bar inferior — MUITO MAIOR */
+  .tab { font-size: 12px; padding: 10px 2px; gap: 5px; letter-spacing: 0.08em; }
+  .tab-icon { font-size: 24px; }
+  .tabbar { padding: 12px 0 calc(12px + env(safe-area-inset-bottom)); }
+
+  /* Subtítulos de seção */
+  .section-sub { font-size: 13px; }
+  .section-title { font-size: 32px; }
+
+  /* Header */
+  .tagline { font-size: 13px; }
+  .brand-meta { font-size: 12px; }
+  .brand-meta .rd-badge { font-size: 20px; }
+  .athlete-bar { font-size: 12px; padding: 14px 16px; }
+
+  /* Treino */
+  .split-btn { font-size: 12px; padding: 14px 8px; }
+  .split-btn small { font-size: 10px; }
+  .week-tracker { font-size: 13px; padding: 12px 16px; }
+  .week-tracker strong { font-size: 20px; }
+  .deload-chip { font-size: 11px; padding: 4px 10px; }
+  .week-btn { width: 34px; height: 34px; font-size: 18px; }
+  .day-name { font-size: 11px; }
+  .day-focus { font-size: 14px; }
+  .workout-title { font-size: 28px; }
+  .workout-meta { font-size: 12px; }
+  .ex-name { font-size: 16px; }
+  .ex-detail { font-size: 12px; line-height: 1.5; }
+  .ex-sets { font-size: 22px; }
+  .ex-check { width: 26px; height: 26px; }
+
+  /* Readiness */
+  .rd-label { font-size: 18px; }
+  .rd-hint { font-size: 11px; }
+  .rd-value { font-size: 32px; }
+  .rd-scale { font-size: 11px; }
+
+  /* Dieta */
+  .macro-value { font-size: 28px; }
+  .macro-label { font-size: 11px; }
+  .meal-name { font-size: 22px; }
+  .meal-time { font-size: 13px; }
+  .meal-items { font-size: 15px; line-height: 1.7; }
+  .meal-macros { font-size: 12px; }
+  .diet-mode-label, .diet-jejum-counter { font-size: 12px; }
+  .diet-mode-btn { font-size: 12px; padding: 14px 8px; }
+  .diet-mode-btn small { font-size: 10px; }
+  .diet-fast-note { font-size: 12px; }
+  .opt-chip { font-size: 11px; padding: 8px 14px; }
+  .opt-tag { font-size: 10px; padding: 4px 8px; }
+  .meal-totals-label { font-size: 11px; }
+  .meal-totals-grid strong { font-size: 26px; }
+  .meal-totals-grid small { font-size: 11px; }
+
+  /* Timer */
+  .timer-display { font-size: 88px; }
+  .timer-label { font-size: 12px; }
+  .timer-btn { font-size: 13px; padding: 14px 18px; }
+
+  /* Progresso */
+  .progress-label { font-size: 12px; }
+  .progress-value { font-size: 24px; }
+  .reset-btn { font-size: 13px; padding: 16px; }
+
+  /* Info blocks */
+  .info-block h4 { font-size: 20px; }
+  .info-block p, .info-block li { font-size: 14px; line-height: 1.7; }
+
+  /* Saúde */
+  .auth-card h4 { font-size: 22px; }
+  .auth-card input { font-size: 16px; padding: 14px 16px; }
+  .auth-btn { font-size: 13px; padding: 16px; }
+  .auth-status { font-size: 12px; }
+  .sync-bar { font-size: 12px; }
+  .sync-bar button { font-size: 11px; padding: 8px 12px; }
+  .metric-value { font-size: 24px; }
+  .metric-label { font-size: 10px; }
+  .metric-delta { font-size: 11px; }
+  .chart-wrap h5 { font-size: 18px; }
+  .chart-wrap h5 small { font-size: 10px; }
+  .exam-item .exam-type { font-size: 18px; }
+  .exam-item .exam-date { font-size: 11px; }
+  .exam-item .exam-ia { font-size: 13px; }
+  .empty-state { font-size: 13px; padding: 36px 20px; }
+  .empty-state strong { font-size: 17px; }
+  .ia-panel h4 { font-size: 20px; }
+  .ia-panel .ia-sub { font-size: 11px; }
+  .ia-btn { font-size: 12px; padding: 14px 10px; }
+  .ia-output { font-size: 14px; line-height: 1.6; }
+  .ia-key-field input { font-size: 13px; padding: 12px 14px; }
+  .ia-key-field button { font-size: 11px; padding: 0 16px; }
+  details summary { font-size: 12px !important; padding: 4px 0; }
 }
 </style>
 </head>
