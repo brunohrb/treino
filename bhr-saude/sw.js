@@ -1,4 +1,4 @@
-const CACHE = 'bhr-saude-v4';
+const CACHE = 'bhr-saude-v5';
 const ASSETS = [
   './',
   './index.html',
