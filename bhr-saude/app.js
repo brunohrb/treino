@@ -448,7 +448,7 @@ function readinessAdvice(score) {
   if (score >= 80) return { level: 'ALTA', color: '#00d97e', text: 'Corpo pronto. Treine forte — pode tentar PR hoje.' };
   if (score >= 60) return { level: 'BOA', color: '#9bd200', text: 'Treino normal conforme plano.' };
   if (score >= 40) return { level: 'MÉDIA', color: '#ffb020', text: 'Reduza carga 10-15%. Mantenha séries.' };
-  return { level: 'BAIXA', color: '#ff2d2d', text: 'Considere treino leve ou descanso. Corpo pedindo.' };
+  return { level: 'BAIXA', color: '#ff6060', text: 'Considere treino leve ou descanso. Corpo pedindo.' };
 }
 
 // ---------- RENDER: FILA --------------------------------------------
@@ -1192,7 +1192,7 @@ function renderBio() {
 
   const labels = ordenado.map(b => new Date(b.data).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }));
   const ds = [
-    { label: 'Peso (kg)', data: ordenado.map(b => +b.peso || null), borderColor: '#ff2d2d', backgroundColor: 'rgba(255,45,45,0.1)', tension: 0.35, yAxisID: 'y' },
+    { label: 'Peso (kg)', data: ordenado.map(b => +b.peso || null), borderColor: '#ff6060', backgroundColor: 'rgba(255,96,96,0.1)', tension: 0.35, yAxisID: 'y' },
     { label: 'Gordura (%)', data: ordenado.map(b => +b.gordura || null), borderColor: '#ffb020', backgroundColor: 'rgba(255,176,32,0.1)', tension: 0.35, yAxisID: 'y1' },
     { label: 'Massa (kg)', data: ordenado.map(b => +b.massa || null), borderColor: '#00d97e', backgroundColor: 'rgba(0,217,126,0.1)', tension: 0.35, yAxisID: 'y' },
   ];
@@ -1370,8 +1370,8 @@ function renderMarkerChart(marker, vals) {
       datasets: [{
         label: marker,
         data,
-        borderColor: '#ff2d2d',
-        backgroundColor: 'rgba(255,45,45,0.15)',
+        borderColor: '#ff6060',
+        backgroundColor: 'rgba(255,96,96,0.15)',
         tension: 0.3,
         fill: true,
         pointRadius: 5,
@@ -1491,7 +1491,7 @@ function renderExames() {
     markersParaPlotar.flatMap(k => ind[k].map(v => v.data))
   )].sort((a, b) => new Date(a) - new Date(b));
   const labels = datasCronologia.map(d => new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }));
-  const cores = ['#ff2d2d', '#ffb020', '#00d97e', '#8a8afc', '#fc6e9b', '#6be0ff'];
+  const cores = ['#ff6060', '#ffb020', '#00d97e', '#8a8afc', '#fc6e9b', '#6be0ff'];
   const datasets = markersParaPlotar.map((p, i) => ({
     label: p,
     data: datasCronologia.map(d => {
