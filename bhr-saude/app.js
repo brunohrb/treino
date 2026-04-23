@@ -341,22 +341,23 @@ const MEALS = [
 // ---------- STATE ----------------------------------------------------
 const STORAGE_KEY = 'iron-data-v2';
 const todayKey = () => new Date().toISOString().slice(0, 10);
-const getTodayIndex = () => new Date().getDay();
+
+// Ciclo da fila: 35 posições (5 "semanas" de 7 dias cada), deload nas últimas 7.
+const CYCLE_LENGTH = 35;
+const DELOAD_WINDOW = 7;
 
 function defaultState() {
   return {
     date: todayKey(),
-    split: '6d',           // '6d' ou '5d'
-    weekNumber: 1,         // incrementa a cada segunda
-    lastWeekIncrement: todayKey(),
-    deloadEvery: 5,        // deload a cada X semanas (4-6 range comum)
-    exercises: {},
+    split: '6d',            // '6d' ou '5d'
+    cursor: 0,              // posição atual na fila (0..6 no split vigente)
+    completedCount: 0,      // total de sessões concluídas/puladas — base do ciclo e deload
+    exercises: {},          // checks da sessão em andamento
     meals: {},              // { [mealId]: true/false }
     mealChoice: {},         // { [mealId]: optionIndex }
     fastToday: false,       // jejum 16h ativo hoje
     fastDays: {},           // { 'YYYY-MM-DD': true } — histórico de jejum
     fastTarget: 2,          // meta de jejum por semana
-    selectedDay: getTodayIndex(),
     readiness: {}           // { 'YYYY-MM-DD': { sleep, energy, soreness, mood, score } }
   };
 }
@@ -368,25 +369,29 @@ function loadState() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return defaultState();
     const parsed = JSON.parse(raw);
-    // migrate missing fields
+    // migração: estado antigo baseado em dia-da-semana → zera cursor e contador
+    if (parsed.cursor === undefined || parsed.completedCount === undefined) {
+      parsed.cursor = 0;
+      parsed.completedCount = 0;
+      parsed.exercises = {};
+    }
+    // limpa campos obsoletos do modelo antigo
+    delete parsed.weekNumber;
+    delete parsed.lastWeekIncrement;
+    delete parsed.deloadEvery;
+    delete parsed.selectedDay;
+    // completa campos faltantes com defaults
     const base = defaultState();
     for (const k of Object.keys(base)) {
       if (parsed[k] === undefined) parsed[k] = base[k];
     }
-    // reset daily progress
+    // reset diário: exercícios e refeições zeram, cursor NÃO avança sozinho
     if (parsed.date !== todayKey()) {
-      // se jejum estava ativo ontem, registra no histórico semanal
       if (parsed.fastToday) parsed.fastDays[parsed.date] = true;
       parsed.date = todayKey();
       parsed.exercises = {};
       parsed.meals = {};
       parsed.fastToday = false;
-      parsed.selectedDay = getTodayIndex();
-      // increment week number every Monday
-      if (getTodayIndex() === 1 && parsed.lastWeekIncrement !== todayKey()) {
-        parsed.weekNumber++;
-        parsed.lastWeekIncrement = todayKey();
-      }
     }
     // migração: meals numéricos antigos (0,1,2...) → limpar
     if (parsed.meals && Object.keys(parsed.meals).some(k => /^\d+$/.test(k))) {
@@ -405,14 +410,26 @@ function saveState() {
   updateDeloadBadge();
 }
 
-// ---------- DELOAD ---------------------------------------------------
-function isDeloadWeek() {
-  return state.weekNumber > 0 && state.weekNumber % state.deloadEvery === 0;
+// ---------- CICLO / DELOAD -------------------------------------------
+// Sessão atual = a que está sendo executada agora (base 1).
+function currentSessionNum() { return state.completedCount + 1; }
+function currentCycleNum()  { return Math.floor(state.completedCount / CYCLE_LENGTH) + 1; }
+// Posição dentro do ciclo (1..CYCLE_LENGTH).
+function sessionInCycle()   { return ((currentSessionNum() - 1) % CYCLE_LENGTH) + 1; }
+// Sessões que faltam pro próximo deload (>0 se fora do deload, 0 durante).
+function sessionsUntilDeload() {
+  const pos = sessionInCycle();
+  const deloadStart = CYCLE_LENGTH - DELOAD_WINDOW + 1; // 29
+  return pos < deloadStart ? deloadStart - pos : 0;
+}
+
+function isDeloadCycle() {
+  return sessionInCycle() >= (CYCLE_LENGTH - DELOAD_WINDOW + 1);
 }
 
 function applyDeloadModifier(sets) {
   // reduz séries em ~50% e pede reduzir carga 40%
-  if (!isDeloadWeek()) return sets;
+  if (!isDeloadCycle()) return sets;
   const match = sets.match(/^(\d+)x(.+)$/);
   if (!match) return sets;
   const newSets = Math.max(2, Math.ceil(parseInt(match[1]) / 2));
@@ -434,34 +451,46 @@ function readinessAdvice(score) {
   return { level: 'BAIXA', color: '#ff2d2d', text: 'Considere treino leve ou descanso. Corpo pedindo.' };
 }
 
-// ---------- RENDER: WEEK --------------------------------------------
+// ---------- RENDER: FILA --------------------------------------------
 function currentSplit() { return SPLITS[state.split]; }
+function currentDayData() { return currentSplit()[state.cursor]; }
+function currentWorkout() { return WORKOUTS[currentDayData().key]; }
+
+// Retorna as próximas N posições da fila a partir do cursor (exclui a atual).
+function upcomingQueue(n) {
+  const split = currentSplit();
+  const out = [];
+  for (let i = 1; i <= n; i++) {
+    out.push(split[(state.cursor + i) % split.length]);
+  }
+  return out;
+}
 
 function renderWeek() {
   const grid = document.getElementById('weekGrid');
   grid.innerHTML = '';
-  const today = getTodayIndex();
   const split = currentSplit();
-  split.forEach((d, i) => {
+  const size = split.length;
+  // Rotaciona pra começar no cursor: posição 0 = AGORA, 1..6 = próximas.
+  for (let i = 0; i < size; i++) {
+    const item = split[(state.cursor + i) % size];
     const chip = document.createElement('div');
     chip.className = 'day-chip';
-    if (i === state.selectedDay) chip.classList.add('active');
-    if (i === today) chip.classList.add('today');
-    chip.innerHTML = `<div class="day-name">${d.day}</div><div class="day-focus">${d.focus}</div>`;
+    if (i === 0) chip.classList.add('active');
+    const pos = i === 0 ? 'AGORA' : `+${i}`;
+    chip.innerHTML = `<div class="day-name">${pos}</div><div class="day-focus">${item.focus}</div>`;
+    // Clique não muda cursor — apenas scrolla até o workout principal.
     chip.onclick = () => {
-      state.selectedDay = i;
-      saveState();
-      renderWeek();
-      renderWorkout();
+      document.getElementById('workoutContainer').scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
     grid.appendChild(chip);
-  });
+  }
 }
 
 // ---------- RENDER: WORKOUT -----------------------------------------
 function renderWorkout() {
   const container = document.getElementById('workoutContainer');
-  const dayData = currentSplit()[state.selectedDay];
+  const dayData = currentDayData();
   const w = WORKOUTS[dayData.key];
 
   if (w.rest) {
@@ -475,15 +504,19 @@ function renderWorkout() {
         <p>Hipertrofia acontece no descanso. Aproveita pra dormir bem, comer todas as refeições e hidratação 3.5L+.
         Se sentir ansiedade, caminhada leve 30min — mas <strong>sem treino de força</strong>.</p>
       </div>
+      <div class="workout-actions">
+        <button class="btn-finalize" id="finalizeBtn">CONCLUIR DESCANSO →</button>
+      </div>
     `;
+    document.getElementById('finalizeBtn').onclick = () => finalizeSession();
     updateProgress();
     return;
   }
 
-  const deload = isDeloadWeek();
+  const deload = isDeloadCycle();
   const deloadBanner = deload ? `
     <div class="deload-banner">
-      🔋 SEMANA DE DELOAD (${state.weekNumber}ª sem) · Reduza cargas 40% · Séries já ajustadas
+      🔋 DELOAD ATIVO · sessão ${sessionInCycle()}/${CYCLE_LENGTH} · Reduza cargas 40% · Séries já ajustadas
     </div>
   ` : '';
 
@@ -503,6 +536,9 @@ function renderWorkout() {
     `;
   }).join('');
 
+  const doneCount = w.exercises.filter((_, i) => state.exercises[`${dayData.key}-${i}`]).length;
+  const allDone = doneCount === w.exercises.length && w.exercises.length > 0;
+
   container.innerHTML = `
     ${deloadBanner}
     <div class="workout-card displayed">
@@ -515,6 +551,12 @@ function renderWorkout() {
       </div>
       <div class="exercises">${exercisesHTML}</div>
     </div>
+    <div class="workout-actions">
+      <button class="btn-finalize ${allDone ? 'ready' : ''}" id="finalizeBtn" ${doneCount === 0 ? 'disabled' : ''}>
+        ${allDone ? '✓ FINALIZAR TREINO' : `FINALIZAR TREINO (${doneCount}/${w.exercises.length})`}
+      </button>
+      <button class="btn-skip" id="skipBtn">PULAR TREINO →</button>
+    </div>
   `;
 
   container.querySelectorAll('.exercise').forEach(el => {
@@ -523,10 +565,52 @@ function renderWorkout() {
       state.exercises[key] = !state.exercises[key];
       el.classList.toggle('done');
       saveState();
+
+      // Auto-finaliza quando todos os exercícios marcam como feitos.
+      const k = currentDayData().key;
+      const allNowDone = WORKOUTS[k].exercises.every((_, i) => state.exercises[`${k}-${i}`]);
+      if (allNowDone) {
+        setTimeout(() => finalizeSession(), 350); // delay pro usuário ver o último check animar
+      } else {
+        renderWorkout(); // re-render pra atualizar contador do botão
+      }
     };
   });
 
+  document.getElementById('finalizeBtn').onclick = () => finalizeSession();
+  document.getElementById('skipBtn').onclick = () => {
+    if (confirm('Pular este treino? A fila avança e conta pro ciclo de deload.')) skipSession();
+  };
+
   updateProgress();
+}
+
+// ---------- CONTROLE DA FILA ----------------------------------------
+function advanceCursor() {
+  const split = currentSplit();
+  // limpa checks da sessão que termina
+  const oldKey = split[state.cursor].key;
+  Object.keys(state.exercises).forEach(k => {
+    if (k.startsWith(oldKey + '-')) delete state.exercises[k];
+  });
+  state.cursor = (state.cursor + 1) % split.length;
+  state.completedCount++;
+  saveState();
+  renderWeek();
+  renderWorkout();
+}
+
+function finalizeSession() { advanceCursor(); }
+function skipSession()     { advanceCursor(); }
+
+function undoLastSession() {
+  if (state.completedCount === 0) return;
+  const split = currentSplit();
+  state.cursor = (state.cursor - 1 + split.length) % split.length;
+  state.completedCount--;
+  saveState();
+  renderWeek();
+  renderWorkout();
 }
 
 // ---------- RENDER: MEALS -------------------------------------------
@@ -664,7 +748,7 @@ function renderMeals() {
 
 // ---------- PROGRESS ------------------------------------------------
 function updateProgress() {
-  const dayKey = currentSplit()[state.selectedDay].key;
+  const dayKey = currentDayData().key;
   const dayWorkout = WORKOUTS[dayKey];
   if (!dayWorkout.rest) {
     const total = dayWorkout.exercises.length;
@@ -684,11 +768,17 @@ function updateProgress() {
   document.getElementById('barDieta').style.width = mealsPct + '%';
   document.getElementById('valDieta').textContent = `${mealsDone} / ${mealsTotal}${state.fastToday ? ' · JEJUM' : ''}`;
 
-  // week counter
+  // contador de sessão/ciclo
+  const session = sessionInCycle();
+  const cycle = currentCycleNum();
   const wc = document.getElementById('weekCounter');
-  if (wc) wc.textContent = `SEM ${state.weekNumber}`;
-  const wd = document.getElementById('weekDisplay');
-  if (wd) wd.textContent = state.weekNumber;
+  if (wc) wc.textContent = `SESSÃO ${session}/${CYCLE_LENGTH}`;
+  const sn = document.getElementById('sessionNum');
+  if (sn) sn.textContent = session;
+  const cn = document.getElementById('cycleNum');
+  if (cn) cn.textContent = cycle;
+  const st = document.getElementById('sessionTotal');
+  if (st) st.textContent = CYCLE_LENGTH;
 }
 
 // ---------- READINESS UI --------------------------------------------
@@ -744,12 +834,12 @@ function saveReadiness() {
 function updateDeloadBadge() {
   const badge = document.getElementById('deloadBadge');
   if (!badge) return;
-  if (isDeloadWeek()) {
+  if (isDeloadCycle()) {
     badge.textContent = '⚡ DELOAD';
     badge.style.display = 'inline-block';
   } else {
-    const remaining = state.deloadEvery - (state.weekNumber % state.deloadEvery);
-    badge.textContent = `deload em ${remaining}sem`;
+    const remaining = sessionsUntilDeload();
+    badge.textContent = `deload em ${remaining} sessão${remaining === 1 ? '' : 'ões'}`;
     badge.style.display = 'inline-block';
   }
 }
@@ -860,7 +950,8 @@ document.querySelectorAll('.split-btn').forEach(btn => {
   btn.onclick = () => {
     state.split = btn.dataset.split;
     state.exercises = {};
-    state.selectedDay = getTodayIndex();
+    // cursor se mantém, mas garante estar dentro do range do split novo
+    state.cursor = state.cursor % SPLITS[state.split].length;
     saveState();
     updateSplitToggle();
     renderWeek();
@@ -878,13 +969,15 @@ document.querySelectorAll('.split-btn').forEach(btn => {
   slider.addEventListener('change', saveReadiness);
 });
 
-// ---------- WEEK CONTROLS -------------------------------------------
-document.getElementById('weekMinus').onclick = () => {
-  if (state.weekNumber > 1) { state.weekNumber--; saveState(); renderWorkout(); }
-};
-document.getElementById('weekPlus').onclick = () => {
-  state.weekNumber++; saveState(); renderWorkout();
-};
+// ---------- CONTROLE DE CICLO ---------------------------------------
+// Desfaz o último avanço de cursor (caso tenha marcado/pulado por engano).
+const undoBtn = document.getElementById('undoSession');
+if (undoBtn) {
+  undoBtn.onclick = () => {
+    if (state.completedCount === 0) return;
+    if (confirm('Desfazer a última sessão? O cursor volta uma posição.')) undoLastSession();
+  };
+}
 
 // ---------- RESET ---------------------------------------------------
 document.getElementById('resetDay').onclick = () => {
@@ -1830,7 +1923,7 @@ function contextoSaude() {
   const examesOrd = [...examesData].sort((a, b) => new Date(b.data) - new Date(a.data)).slice(0, 3);
 
   let texto = `# DADOS DO ATLETA\n`;
-  texto += `Bruno · 40 anos · 1.76m · protocolo hipertrofia · split ${state.split} · semana ${state.weekNumber}${isDeloadWeek() ? ' (DELOAD)' : ''}\n\n`;
+  texto += `Bruno · 40 anos · 1.76m · protocolo hipertrofia · split ${state.split} · ciclo ${currentCycleNum()} · sessão ${sessionInCycle()}/${CYCLE_LENGTH}${isDeloadCycle() ? ' (DELOAD)' : ''}\n\n`;
 
   if (bioAtual) {
     texto += `# BIOIMPEDÂNCIA ATUAL (${new Date(bioAtual.data).toLocaleDateString('pt-BR')})\n`;
