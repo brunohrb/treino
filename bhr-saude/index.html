@@ -850,6 +850,51 @@ section {
 }
 .video-yt-link:active { color: var(--accent); }
 
+/* CRONÔMETRO INLINE (dentro do card de treino) */
+.workout-chrono {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg-elev);
+}
+.workout-chrono-left { display: flex; flex-direction: column; gap: 1px; }
+.workout-chrono-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--ink-dim);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.workout-chrono-time {
+  font-family: var(--font-display);
+  font-size: 36px;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  transition: color 0.3s;
+}
+.workout-chrono-time.running { color: var(--accent); }
+.workout-chrono-btn {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  padding: 10px 16px;
+  border-radius: 2px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all 0.15s;
+}
+.workout-chrono-btn.running {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.workout-chrono-btn:active { transform: scale(0.95); }
+
 /* CRONÔMETRO */
 .chrono-wrap {
   display: flex;
