@@ -761,6 +761,131 @@ section {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* BOTÃO DE VÍDEO NO EXERCÍCIO */
+.ex-yt {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: 1px solid rgba(255,45,45,0.35);
+  color: rgba(255,45,45,0.75);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  padding: 3px 7px;
+  border-radius: 2px;
+  cursor: pointer;
+  margin-top: 6px;
+  text-transform: uppercase;
+}
+.ex-yt:active { background: rgba(255,45,45,0.12); border-color: var(--accent); color: var(--accent); }
+
+/* OVERLAY DE VÍDEO */
+.video-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.94);
+  z-index: 300;
+  display: none;
+  flex-direction: column;
+}
+.video-overlay.show { display: flex; }
+.video-overlay-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: calc(16px + env(safe-area-inset-top)) 18px 16px;
+}
+.video-overlay-title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  letter-spacing: 0.05em;
+  flex: 1;
+  margin-right: 12px;
+}
+.video-overlay-close {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  padding: 8px 14px;
+  border-radius: 2px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.video-overlay-close:active { background: var(--bg-elev); }
+.video-overlay-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 16px calc(16px + env(safe-area-inset-bottom));
+}
+.video-iframe-wrap {
+  position: relative;
+  padding-bottom: 56.25%;
+  height: 0;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #000;
+}
+.video-iframe-wrap iframe {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  border: none;
+}
+.video-yt-link {
+  display: block;
+  text-align: center;
+  margin-top: 14px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-dim);
+  letter-spacing: 0.12em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+.video-yt-link:active { color: var(--accent); }
+
+/* CRONÔMETRO */
+.chrono-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 28px 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+.chrono-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-dim);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.chrono-display {
+  font-family: var(--font-display);
+  font-size: 72px;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  transition: color 0.3s;
+}
+.chrono-display.running { color: var(--accent); }
+.chrono-status {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-dim);
+  letter-spacing: 0.2em;
+  margin-top: 6px;
+}
+
 /* TIMER */
 .timer-wrap {
   display: flex;
@@ -1613,6 +1738,19 @@ section:nth-of-type(2) { animation-delay: 0.2s; }
 <!-- VIEW: TIMER -->
 <div class="view" id="view-timer">
 <section>
+  <h2 class="section-title">Cronômetro de Treino</h2>
+  <p class="section-sub">Conta o tempo total do seu treino</p>
+
+  <div class="chrono-wrap">
+    <div class="chrono-label">TEMPO DE TREINO</div>
+    <div class="chrono-display" id="chronoDisplay">00:00</div>
+    <div class="chrono-status" id="chronoStatus">PARADO</div>
+    <div class="timer-controls" style="margin-top:20px;">
+      <button class="timer-btn primary" id="chronoStart">INICIAR</button>
+      <button class="timer-btn" id="chronoReset">ZERAR</button>
+    </div>
+  </div>
+
   <h2 class="section-title">Timer de Descanso</h2>
   <p class="section-sub">60-90s compostos · 45-60s isoladores</p>
 
@@ -1810,6 +1948,22 @@ section:nth-of-type(2) { animation-delay: 0.2s; }
     </div>
   </div>
 </section>
+</div>
+
+<!-- OVERLAY DE VÍDEO -->
+<div class="video-overlay" id="videoOverlay">
+  <div class="video-overlay-header">
+    <div class="video-overlay-title" id="videoOverlayTitle">Como executar</div>
+    <button class="video-overlay-close" id="videoOverlayClose">FECHAR</button>
+  </div>
+  <div class="video-overlay-body">
+    <div class="video-iframe-wrap">
+      <iframe id="videoOverlayIframe" src="" allowfullscreen allow="autoplay; encrypted-media"></iframe>
+    </div>
+    <a class="video-yt-link" id="videoOverlayYtLink" href="#" target="_blank" rel="noopener noreferrer">
+      Abrir no YouTube ↗
+    </a>
+  </div>
 </div>
 
 <nav class="tabbar">
