@@ -87,6 +87,105 @@ function fecharVideo() {
 
 document.getElementById('videoOverlayClose').onclick = fecharVideo;
 
+// ---------- TIMER REGRESSIVO DE DESCANSO ----------------------------
+let restInterval = null;
+let restTotal = 0;
+let restRemaining = 0;
+let restExKey = null;
+
+function parseDescanso(detail) {
+  const m = detail.match(/Descanso\s+(\d+)(min|s)/i);
+  if (!m) return 60;
+  return m[2].toLowerCase() === 'min' ? parseInt(m[1]) * 60 : parseInt(m[1]);
+}
+
+function iniciarRest(key, nome, segundos) {
+  cancelarRest();
+  restExKey = key;
+  restTotal = segundos;
+  restRemaining = segundos;
+  document.getElementById('restOverlayName').textContent = nome.toUpperCase();
+  atualizarRestOverlay();
+  document.getElementById('restOverlay').classList.add('show');
+  const btn = document.getElementById(`restBtn-${key}`);
+  if (btn) btn.classList.add('running');
+  restInterval = setInterval(() => {
+    restRemaining--;
+    atualizarRestOverlay();
+    if (restRemaining <= 0) {
+      clearInterval(restInterval);
+      restInterval = null;
+      document.getElementById('restOverlayName').textContent = 'DESCANSOU! PRÓXIMA SÉRIE ✓';
+      document.getElementById('restOverlayTime').textContent = '00';
+      // Vibração + bipe de alarme
+      if ('vibrate' in navigator) navigator.vibrate([400, 150, 400, 150, 400]);
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        [0, 0.4, 0.8].forEach(t => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain); gain.connect(ctx.destination);
+          osc.frequency.value = 880;
+          gain.gain.setValueAtTime(0.4, ctx.currentTime + t);
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + t + 0.3);
+          osc.start(ctx.currentTime + t);
+          osc.stop(ctx.currentTime + t + 0.3);
+        });
+      } catch(e) {}
+      setTimeout(() => cancelarRest(), 2500);
+    }
+  }, 1000);
+}
+
+function reiniciarRest(segundos) {
+  if (!restExKey) return;
+  clearInterval(restInterval);
+  restTotal = segundos;
+  restRemaining = segundos;
+  atualizarRestOverlay();
+  restInterval = setInterval(() => {
+    restRemaining--;
+    atualizarRestOverlay();
+    if (restRemaining <= 0) {
+      clearInterval(restInterval);
+      restInterval = null;
+      document.getElementById('restOverlayName').textContent = 'DESCANSOU! PRÓXIMA SÉRIE ✓';
+      document.getElementById('restOverlayTime').textContent = '00';
+      if ('vibrate' in navigator) navigator.vibrate([400, 150, 400, 150, 400]);
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        [0, 0.4, 0.8].forEach(t => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain); gain.connect(ctx.destination);
+          osc.frequency.value = 880;
+          gain.gain.setValueAtTime(0.4, ctx.currentTime + t);
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + t + 0.3);
+          osc.start(ctx.currentTime + t);
+          osc.stop(ctx.currentTime + t + 0.3);
+        });
+      } catch(e) {}
+      setTimeout(() => cancelarRest(), 2500);
+    }
+  }, 1000);
+}
+
+function atualizarRestOverlay() {
+  const pct = restTotal > 0 ? (restRemaining / restTotal) * 100 : 0;
+  document.getElementById('restOverlayTime').textContent = String(restRemaining).padStart(2, '0');
+  document.getElementById('restOverlayBar').style.width = pct + '%';
+}
+
+function cancelarRest() {
+  if (restInterval) { clearInterval(restInterval); restInterval = null; }
+  document.getElementById('restOverlay').classList.remove('show');
+  if (restExKey) {
+    const btn = document.getElementById(`restBtn-${restExKey}`);
+    if (btn) btn.classList.remove('running');
+    restExKey = null;
+  }
+}
+
 // ---------- DIVISÕES -------------------------------------------------
 const SPLITS = {
   '6d': [
@@ -611,6 +710,8 @@ function renderWorkout() {
     const videoBtn = videoId
       ? `<button class="ex-yt" onclick="event.stopPropagation(); abrirVideo('${videoId}', '${ex.name.replace(/'/g, "\\'")}')">▶ VER EXECUÇÃO</button>`
       : '';
+    const restSec = parseDescanso(ex.detail);
+    const isRunning = restExKey === key;
     return `
       <div class="exercise ${done ? 'done' : ''}" data-key="${key}">
         <div class="ex-check"></div>
@@ -620,6 +721,8 @@ function renderWorkout() {
           ${videoBtn}
         </div>
         <div class="ex-sets">${adjustedSets}</div>
+        <button class="ex-timer-btn ${isRunning ? 'running' : ''}" id="restBtn-${key}"
+                onclick="event.stopPropagation(); iniciarRest('${key}', '${ex.name.replace(/'/g,"\\'")}', ${restSec})">⏱</button>
       </div>
     `;
   }).join('');
