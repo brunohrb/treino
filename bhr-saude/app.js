@@ -637,6 +637,13 @@ function renderWorkout() {
           <span>📊 <strong>${w.volume}</strong></span>
         </div>
       </div>
+      <div class="workout-chrono" id="workoutChrono">
+        <div class="workout-chrono-left">
+          <div class="workout-chrono-label">CRONÔMETRO</div>
+          <div class="workout-chrono-time" id="workoutChronoTime">00:00</div>
+        </div>
+        <button class="workout-chrono-btn" id="workoutChronoBtn">INICIAR</button>
+      </div>
       <div class="exercises">${exercisesHTML}</div>
     </div>
     <div class="workout-actions">
@@ -664,6 +671,10 @@ function renderWorkout() {
       }
     };
   });
+
+  // Sincroniza o cronômetro inline com o estado atual e liga o botão
+  syncChronoInline();
+  document.getElementById('workoutChronoBtn').onclick = toggleChrono;
 
   document.getElementById('finalizeBtn').onclick = () => finalizeSession();
   document.getElementById('skipBtn').onclick = () => {
@@ -1031,8 +1042,8 @@ document.querySelectorAll('.timer-btn[data-sec]').forEach(btn => {
 let chronoRunning = false;
 let chronoSeconds = 0;
 let chronoInterval = null;
-const chronoDisplay = document.getElementById('chronoDisplay');
-const chronoStatus  = document.getElementById('chronoStatus');
+const chronoDisplay  = document.getElementById('chronoDisplay');
+const chronoStatus   = document.getElementById('chronoStatus');
 const chronoStartBtn = document.getElementById('chronoStart');
 
 function fmtChrono(s) {
@@ -1041,6 +1052,25 @@ function fmtChrono(s) {
   const r = s % 60;
   if (h > 0) return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(r).padStart(2,'0')}`;
   return `${String(m).padStart(2,'0')}:${String(r).padStart(2,'0')}`;
+}
+
+// Atualiza o display na aba Timer e o display inline no card de treino
+function updateAllChronoDisplays() {
+  const t = fmtChrono(chronoSeconds);
+  chronoDisplay.textContent = t;
+  const inline = document.getElementById('workoutChronoTime');
+  if (inline) inline.textContent = t;
+}
+
+// Sincroniza o bloco inline do card com o estado atual do cronômetro
+function syncChronoInline() {
+  const inlineTime = document.getElementById('workoutChronoTime');
+  const inlineBtn  = document.getElementById('workoutChronoBtn');
+  if (!inlineTime || !inlineBtn) return;
+  inlineTime.textContent = fmtChrono(chronoSeconds);
+  inlineTime.classList.toggle('running', chronoRunning);
+  inlineBtn.textContent = chronoRunning ? 'PAUSAR' : (chronoSeconds > 0 ? 'CONTINUAR' : 'INICIAR');
+  inlineBtn.classList.toggle('running', chronoRunning);
 }
 
 function toggleChrono() {
@@ -1057,9 +1087,10 @@ function toggleChrono() {
     chronoStartBtn.textContent = 'PAUSAR';
     chronoInterval = setInterval(() => {
       chronoSeconds++;
-      chronoDisplay.textContent = fmtChrono(chronoSeconds);
+      updateAllChronoDisplays();
     }, 1000);
   }
+  syncChronoInline();
 }
 
 chronoStartBtn.onclick = toggleChrono;
@@ -1072,6 +1103,7 @@ document.getElementById('chronoReset').onclick = () => {
   chronoDisplay.classList.remove('running');
   chronoStatus.textContent = 'PARADO';
   chronoStartBtn.textContent = 'INICIAR';
+  syncChronoInline();
 };
 
 // ---------- SPLIT TOGGLE --------------------------------------------
