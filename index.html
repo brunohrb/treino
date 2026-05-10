@@ -2038,6 +2038,79 @@ header {
 }
 .ex-yt-btn:active { background: rgba(255,0,0,0.3); }
 
+.ex-video-thumb {
+    margin-top: 0.45rem;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+    cursor: pointer;
+    max-width: 160px;
+}
+.ex-video-thumb img {
+    width: 100%;
+    display: block;
+    border-radius: 8px;
+    opacity: 0.85;
+    transition: opacity 0.2s;
+}
+.ex-video-thumb:active img { opacity: 1; }
+.ex-video-thumb-play {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.35);
+    border-radius: 8px;
+}
+.ex-video-thumb-play svg { filter: drop-shadow(0 1px 3px rgba(0,0,0,0.7)); }
+
+/* Player de vídeo no modal */
+.video-modal-player {
+    position: relative;
+    padding-bottom: 56.25%;
+    height: 0;
+    overflow: hidden;
+    border-radius: 10px;
+    background: #000;
+}
+.video-modal-player iframe {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    border: none;
+    border-radius: 10px;
+}
+.video-modal-search-link {
+    display: block;
+    text-align: center;
+    margin-top: 0.75rem;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    text-decoration: none;
+}
+.video-modal-search-link:hover { color: var(--primary); }
+
+/* Botão iniciar cronômetro no topo do card */
+.treino-start-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, var(--success) 0%, #16a34a 100%);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    width: 100%;
+    justify-content: center;
+    margin-bottom: 0.75rem;
+    transition: opacity 0.2s;
+}
+.treino-start-btn:active { opacity: 0.85; transform: scale(0.98); }
+
 .ex-del-btn {
     width: 36px;
     height: 36px;
@@ -3690,6 +3763,22 @@ header {
         </div>
     </div>
 
+    <!-- MODAL: VÍDEO DE EXERCÍCIO -->
+    <div id="videoExModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="videoExTitulo">Como executar</h3>
+                <button class="modal-close" onclick="fecharVideoEx()">×</button>
+            </div>
+            <div class="video-modal-player">
+                <iframe id="videoExIframe" src="" allowfullscreen allow="autoplay; encrypted-media"></iframe>
+            </div>
+            <a id="videoExYtLink" href="#" target="_blank" rel="noopener noreferrer" class="video-modal-search-link">
+                Abrir no YouTube ↗
+            </a>
+        </div>
+    </div>
+
    <!-- LOADING OVERLAY -->
     <div id="loadingOverlay" class="loading-overlay">
         <div class="loading-content">
@@ -5032,12 +5121,26 @@ function renderTreino(treino) {
 
     const exHtml = exercicios.map((ex, idx) => {
         const done = treino.progresso && treino.progresso[idx];
-        const ytUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(ex.nome + ' execução correta')}`;
+        const ytSearch = `https://www.youtube.com/results?search_query=${encodeURIComponent(ex.nome + ' execução correta')}`;
+        const ytDirect = ex.youtubeId ? `https://www.youtube.com/watch?v=${ex.youtubeId}` : ytSearch;
         const cargaHtml = ex.carga_sugerida ? `<div class="ex-carga">🏋️ ${ex.carga_sugerida}</div>` : '';
         const descansoHtml = ex.descanso_seg ? `<span class="ex-descanso-pill">⏸ ${ex.descanso_seg}s</span>` : '';
         const altHtml = ex.alternativa ? `<div class="ex-alt">↔ Alt.: ${ex.alternativa}</div>` : '';
-        // Usa descanso sugerido pelo exercício (se houver) ao iniciar timer
         const restArg = ex.descanso_seg ? `, ${ex.descanso_seg}` : '';
+        // Thumbnail clicável quando há vídeo mapeado; senão botão abre busca
+        const videoHtml = ex.youtubeId
+            ? `<div class="ex-video-thumb" onclick="abrirVideoEx('${ex.youtubeId}', '${ex.nome.replace(/'/g, "\\'")}', '${ytDirect}')" title="Ver como executar">
+                   <img src="https://img.youtube.com/vi/${ex.youtubeId}/mqdefault.jpg" alt="${ex.nome}" loading="lazy">
+                   <div class="ex-video-thumb-play">
+                       <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"></polygon></svg>
+                   </div>
+               </div>`
+            : '';
+        const ytBtnOnclick = ex.youtubeId
+            ? `onclick="abrirVideoEx('${ex.youtubeId}', '${ex.nome.replace(/'/g, "\\'")}', '${ytDirect}'); return false;"`
+            : '';
+        const ytBtnHref = ex.youtubeId ? '#' : ytSearch;
+        const ytBtnTarget = ex.youtubeId ? '' : 'target="_blank" rel="noopener noreferrer"';
         return `
         <div class="ex-row ${done ? 'done' : ''}" id="exrow_${treino.id}_${idx}">
             <div class="ex-info">
@@ -5046,9 +5149,10 @@ function renderTreino(treino) {
                 ${cargaHtml}
                 ${ex.observacao ? `<div class="ex-obs">💡 ${ex.observacao}</div>` : ''}
                 ${altHtml}
+                ${videoHtml}
             </div>
             <div class="ex-actions">
-                <a href="${ytUrl}" target="_blank" rel="noopener noreferrer" class="ex-yt-btn" title="Ver no YouTube">
+                <a href="${ytBtnHref}" ${ytBtnTarget} class="ex-yt-btn" title="Ver como executar" ${ytBtnOnclick}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="#FF0000"><polygon points="5,3 19,12 5,21"></polygon></svg>
                 </a>
                 <button class="ex-rest-btn" id="restBtn_${treino.id}_${idx}"
@@ -5079,14 +5183,14 @@ function renderTreino(treino) {
             <div class="treino-item-progress-bar-fill" style="width:${pct}%"></div>
         </div>
         <div class="treino-item-body" id="treino-content-${treino.id}">
+            <button class="treino-start-btn" onclick="iniciarCronometro(${treino.id}, '${treino.nome.replace(/'/g, "\\'")}')">
+                ⏱️ Iniciar Treino
+                <span id="sessCount_${treino.id}" style="background:rgba(255,255,255,0.2);padding:0.1rem 0.5rem;border-radius:8px;font-size:0.8rem;"></span>
+            </button>
             ${restConfigHtml}${justHtml}${gruposHtml}${warmupHtml}${exHtml}${cooldownHtml}
             ${getHistoricoTreinoDia(treino.id)}
             <div class="treino-item-controls">
-                <button class="btn btn-success" onclick="iniciarCronometro(${treino.id}, '${treino.nome.replace(/'/g, "\\'")}')">
-                    ⏱️ Iniciar
-                    <span id="sessCount_${treino.id}" style="margin-left:0.4rem;background:rgba(255,255,255,0.15);padding:0.1rem 0.5rem;border-radius:8px;font-size:0.8rem;"></span>
-                </button>
-                <button class="btn btn-danger" onclick="deleteTreino(${treino.id})">🗑️</button>
+                <button class="btn btn-danger" onclick="deleteTreino(${treino.id})">🗑️ Excluir treino</button>
             </div>
         </div>
     </div>`;
@@ -5182,6 +5286,22 @@ function toggleVersionGroup(versaoIdx) {
         currentWorkout = { id: treinoId, nome: treinoNome };
         document.getElementById('workoutName').textContent = treinoNome;
         openModal('cronometroModal');
+    }
+
+    // Abre modal com vídeo embutido do YouTube
+    function abrirVideoEx(youtubeId, nome, ytUrl) {
+        document.getElementById('videoExTitulo').textContent = nome;
+        document.getElementById('videoExIframe').src = `https://www.youtube.com/embed/${youtubeId}?autoplay=1&rel=0`;
+        const link = document.getElementById('videoExYtLink');
+        link.href = ytUrl;
+        link.textContent = 'Abrir no YouTube ↗';
+        openModal('videoExModal');
+    }
+
+    function fecharVideoEx() {
+        // Para o vídeo antes de fechar
+        document.getElementById('videoExIframe').src = '';
+        closeModal('videoExModal');
     }
 
     function iniciarTimer() {
