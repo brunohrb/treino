@@ -4,6 +4,89 @@
 // Exames, bio e chave Claude sincronizam via Supabase.
 // ====================================================================
 
+// ---------- VÍDEOS DE EXERCÍCIOS ------------------------------------
+const VIDEOS_MAP = {
+  // Peito
+  'supino reto':              'UHa9U-O09_U',
+  'supino inclinado':         'cXk2mUsUsxg',
+  'supino declinado':         'vnF46SVyFxM',
+  'crucifixo':                'jSS8fYMKC1k',
+  'crossover':                'taI4XduLpTk',
+  'paralelas':                '2z8JmcrW-As',
+  // Costas
+  'barra fixa':               'eGo4IYlbE5g',
+  'remada curvada':           'vT7RPGx5mqk',
+  'remada cavalinho':         'B1nJOd65T1U',
+  'puxada frente':            'lueEJGjTuKo',
+  'remada unilateral':        'kBWAon7ItDw',
+  'pullover':                 'F-FMSrlAq5E',
+  'pulldown':                 'lueEJGjTuKo',
+  'levantamento terra':       'op0GJV4BXS8',
+  // Ombro
+  'desenvolvimento militar':  'qEwKCR5JCog',
+  'desenvolvimento halteres': 'eDTN2SjY1AY',
+  'elevação lateral':         '3VcKaXpzqRo',
+  'elevação frontal':         'SHsUIZiNdeY',
+  'crucifixo invertido':      'Yn7pTBaGzFk',
+  'encolhimento':             'cHxcJGVOCuE',
+  'remada alta':              'X0MaKW1Bp1g',
+  // Bíceps
+  'rosca direta':             'sAq_ocpRh_I',
+  'rosca scott':              'dDI8ClxRS1g',
+  'rosca alternada':          'kwG2ipFRgfo',
+  'rosca concentrada':        'Jvj2wV0vOYU',
+  'rosca martelo':            'TwD-YGVP4Bw',
+  'rosca inversa':            'nZSNzqO5VdY',
+  // Tríceps
+  'tríceps pulley':           's_3LCYNkMLc',
+  'tríceps testa':            'd3_LCuUWdFI',
+  'tríceps francês':          'ir5PzbFDZNc',
+  'tríceps coice':            'PQQ9upFHJrA',
+  // Pernas
+  'agachamento livre':        'gcNh17Ckjuk',
+  'leg press':                'IZxyjW7MPJQ',
+  'cadeira extensora':        'YyvSfVjQeL4',
+  'cadeira flexora':          'm0FOpMa7ono',
+  'mesa flexora':             'ELOCsoDSmrg',
+  'stiff':                    'CN_7cz3P-1U',
+  'afundo':                   'QOVaHwm-Q6U',
+  'hip thrust':               'SEdqd5HHZzQ',
+  'elevação pélvica':         'SEdqd5HHZzQ',
+  'panturrilha':              'JJrsmJMGqd4',
+  'cadeira abdutora':         'xCfWE70tIcY',
+  // Core
+  'abdominal canivete':       'dhNQPL_Svhw',
+  'abdominal infra':          'dhNQPL_Svhw',
+  'prancha':                  'pSHjTRCQxIw',
+  'flexão punho':             'zMqtN6cDrQk',
+};
+
+function buscarVideoId(nome) {
+  const n = nome.toLowerCase();
+  for (const key in VIDEOS_MAP) {
+    if (n.includes(key)) return VIDEOS_MAP[key];
+  }
+  return null;
+}
+
+function abrirVideo(videoId, nome) {
+  const overlay = document.getElementById('videoOverlay');
+  document.getElementById('videoOverlayTitle').textContent = nome;
+  document.getElementById('videoOverlayIframe').src =
+    `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`;
+  const ytUrl = `https://www.youtube.com/watch?v=${videoId}`;
+  const link = document.getElementById('videoOverlayYtLink');
+  link.href = ytUrl;
+  overlay.classList.add('show');
+}
+
+function fecharVideo() {
+  document.getElementById('videoOverlayIframe').src = '';
+  document.getElementById('videoOverlay').classList.remove('show');
+}
+
+document.getElementById('videoOverlayClose').onclick = fecharVideo;
+
 // ---------- DIVISÕES -------------------------------------------------
 const SPLITS = {
   '6d': [
@@ -524,12 +607,17 @@ function renderWorkout() {
     const key = `${dayData.key}-${idx}`;
     const done = state.exercises[key];
     const adjustedSets = applyDeloadModifier(ex.sets);
+    const videoId = buscarVideoId(ex.name);
+    const videoBtn = videoId
+      ? `<button class="ex-yt" onclick="event.stopPropagation(); abrirVideo('${videoId}', '${ex.name.replace(/'/g, "\\'")}')">▶ VER EXECUÇÃO</button>`
+      : '';
     return `
       <div class="exercise ${done ? 'done' : ''}" data-key="${key}">
         <div class="ex-check"></div>
         <div class="ex-body">
           <div class="ex-name">${ex.name}</div>
           <div class="ex-detail">${ex.detail}</div>
+          ${videoBtn}
         </div>
         <div class="ex-sets">${adjustedSets}</div>
       </div>
@@ -938,6 +1026,53 @@ document.querySelectorAll('.timer-btn[data-sec]').forEach(btn => {
     updateTimerDisplay();
   };
 });
+
+// ---------- CRONÔMETRO (conta pra cima) -----------------------------
+let chronoRunning = false;
+let chronoSeconds = 0;
+let chronoInterval = null;
+const chronoDisplay = document.getElementById('chronoDisplay');
+const chronoStatus  = document.getElementById('chronoStatus');
+const chronoStartBtn = document.getElementById('chronoStart');
+
+function fmtChrono(s) {
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const r = s % 60;
+  if (h > 0) return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(r).padStart(2,'0')}`;
+  return `${String(m).padStart(2,'0')}:${String(r).padStart(2,'0')}`;
+}
+
+function toggleChrono() {
+  if (chronoRunning) {
+    clearInterval(chronoInterval);
+    chronoRunning = false;
+    chronoDisplay.classList.remove('running');
+    chronoStatus.textContent = 'PAUSADO';
+    chronoStartBtn.textContent = 'CONTINUAR';
+  } else {
+    chronoRunning = true;
+    chronoDisplay.classList.add('running');
+    chronoStatus.textContent = 'TREINANDO';
+    chronoStartBtn.textContent = 'PAUSAR';
+    chronoInterval = setInterval(() => {
+      chronoSeconds++;
+      chronoDisplay.textContent = fmtChrono(chronoSeconds);
+    }, 1000);
+  }
+}
+
+chronoStartBtn.onclick = toggleChrono;
+
+document.getElementById('chronoReset').onclick = () => {
+  clearInterval(chronoInterval);
+  chronoRunning = false;
+  chronoSeconds = 0;
+  chronoDisplay.textContent = '00:00';
+  chronoDisplay.classList.remove('running');
+  chronoStatus.textContent = 'PARADO';
+  chronoStartBtn.textContent = 'INICIAR';
+};
 
 // ---------- SPLIT TOGGLE --------------------------------------------
 function updateSplitToggle() {
