@@ -4,7 +4,7 @@
  * cache-first para ícones/manifest/arquivos estáticos.
  */
 
-const CACHE_VERSION = 'bhr-treinos-v1';
+const CACHE_VERSION = 'bhr-treinos-v2';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
