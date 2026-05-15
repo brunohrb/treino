@@ -540,7 +540,9 @@ function defaultState() {
     fastToday: false,       // jejum 16h ativo hoje
     fastDays: {},           // { 'YYYY-MM-DD': true } — histórico de jejum
     fastTarget: 2,          // meta de jejum por semana
-    readiness: {}           // { 'YYYY-MM-DD': { sleep, energy, soreness, mood, score } }
+    readiness: {},          // { 'YYYY-MM-DD': { sleep, energy, soreness, mood, score } }
+    restDayToday: '',       // 'YYYY-MM-DD' quando usuário descansou hoje de forma flexível
+    skipNextRest: false     // aguarda consumir o próximo dia OFF agendado na fila
   };
 }
 
@@ -653,14 +655,25 @@ function renderWeek() {
   grid.innerHTML = '';
   const split = currentSplit();
   const size = split.length;
+
+  // Índice relativo do próximo OFF a ser consumido pelo descanso flexível
+  let skipRestIdx = -1;
+  if (state.skipNextRest) {
+    for (let i = 1; i < size; i++) {
+      if (split[(state.cursor + i) % size].key === 'rest') { skipRestIdx = i; break; }
+    }
+  }
+
   // Rotaciona pra começar no cursor: posição 0 = AGORA, 1..6 = próximas.
   for (let i = 0; i < size; i++) {
     const item = split[(state.cursor + i) % size];
     const chip = document.createElement('div');
     chip.className = 'day-chip';
     if (i === 0) chip.classList.add('active');
+    if (i === skipRestIdx) chip.classList.add('rest-consumed');
     const pos = i === 0 ? 'AGORA' : `+${i}`;
-    chip.innerHTML = `<div class="day-name">${pos}</div><div class="day-focus">${item.focus}</div>`;
+    const focus = i === skipRestIdx ? `<s>${item.focus}</s>` : item.focus;
+    chip.innerHTML = `<div class="day-name">${pos}</div><div class="day-focus">${focus}</div>`;
     // Clique não muda cursor — apenas scrolla até o workout principal.
     chip.onclick = () => {
       document.getElementById('workoutContainer').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -674,6 +687,22 @@ function renderWorkout() {
   const container = document.getElementById('workoutContainer');
   const dayData = currentDayData();
   const w = WORKOUTS[dayData.key];
+
+  // Descanso flexível ativo hoje: mostra card de OFF sem avançar cursor
+  if (state.restDayToday === todayKey() && !w.rest) {
+    container.innerHTML = `
+      <div class="rest-card">
+        <h3>OFF FLEX</h3>
+        <p>Você descansou hoje. Treino de amanhã: <strong>${w.title}</strong>.<br>Próximo OFF agendado foi removido da fila.</p>
+      </div>
+      <div class="info-block">
+        <h4>RECUPERAÇÃO</h4>
+        <p>Amanhã retoma com <strong>${w.title}</strong>. Dorme bem, hidrata e come todas as refeições.</p>
+      </div>
+    `;
+    updateProgress();
+    return;
+  }
 
   if (w.rest) {
     container.innerHTML = `
@@ -754,6 +783,10 @@ function renderWorkout() {
         ${allDone ? '✓ FINALIZAR TREINO' : `FINALIZAR TREINO (${doneCount}/${w.exercises.length})`}
       </button>
       <button class="btn-skip" id="skipBtn">PULAR TREINO →</button>
+      ${state.skipNextRest
+        ? `<div class="rest-flex-pending">OFF FLEX ATIVO · próximo descanso da fila removido</div>`
+        : `<button class="btn-rest-flex" id="restFlexBtn">DESCANSAR HOJE</button>`
+      }
     </div>
   `;
 
@@ -783,6 +816,7 @@ function renderWorkout() {
   document.getElementById('skipBtn').onclick = () => {
     if (confirm('Pular este treino? A fila avança e conta pro ciclo de deload.')) skipSession();
   };
+  document.getElementById('restFlexBtn')?.addEventListener('click', descansarHoje);
 
   updateProgress();
 }
@@ -797,6 +831,23 @@ function advanceCursor() {
   });
   state.cursor = (state.cursor + 1) % split.length;
   state.completedCount++;
+
+  // Consome descanso flexível pendente quando a fila chega num dia de OFF
+  if (state.skipNextRest && currentSplit()[state.cursor].key === 'rest') {
+    state.cursor = (state.cursor + 1) % split.length;
+    state.completedCount++;
+    state.skipNextRest = false;
+  }
+
+  saveState();
+  renderWeek();
+  renderWorkout();
+}
+
+function descansarHoje() {
+  if (!confirm('Descansar hoje?\n\nO próximo dia OFF da fila será consumido — você não terá descanso duplo.')) return;
+  state.restDayToday = todayKey();
+  state.skipNextRest = true;
   saveState();
   renderWeek();
   renderWorkout();

@@ -503,6 +503,36 @@ section {
 }
 .btn-skip:active { transform: scale(0.97); background: var(--bg-card); }
 
+.btn-rest-flex {
+  width: 100%;
+  min-height: 44px;
+  padding: 11px 16px;
+  border-radius: 3px;
+  font-family: var(--font-display);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: transparent;
+  border: 1px dashed rgba(255,255,255,0.2);
+  color: var(--ink-dim);
+}
+.btn-rest-flex:active { transform: scale(0.97); background: var(--bg-card); }
+
+.rest-flex-pending {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  text-align: center;
+  padding: 10px;
+  border: 1px dashed var(--accent-dim);
+  border-radius: 3px;
+  opacity: 0.8;
+}
+
+.day-chip.rest-consumed { opacity: 0.35; border-color: var(--line); }
+
 /* REST */
 .rest-card {
   padding: 40px 20px;
