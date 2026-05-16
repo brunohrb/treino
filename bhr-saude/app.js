@@ -699,7 +699,13 @@ function renderWorkout() {
         <h4>RECUPERAÇÃO</h4>
         <p>Amanhã retoma com <strong>${w.title}</strong>. Dorme bem, hidrata e come todas as refeições.</p>
       </div>
+      <div class="workout-actions">
+        <button class="btn-skip" id="skipBtn">PULAR TREINO →</button>
+      </div>
     `;
+    document.getElementById('skipBtn').onclick = () => {
+      if (confirm('Pular este treino? A fila avança e conta pro ciclo de deload.')) skipSession();
+    };
     updateProgress();
     return;
   }
@@ -717,9 +723,13 @@ function renderWorkout() {
       </div>
       <div class="workout-actions">
         <button class="btn-finalize" id="finalizeBtn">CONCLUIR DESCANSO →</button>
+        <button class="btn-skip" id="skipBtn">PULAR DESCANSO →</button>
       </div>
     `;
     document.getElementById('finalizeBtn').onclick = () => finalizeSession();
+    document.getElementById('skipBtn').onclick = () => {
+      if (confirm('Pular o descanso? A fila avança e conta pro ciclo de deload.')) skipSession();
+    };
     updateProgress();
     return;
   }
