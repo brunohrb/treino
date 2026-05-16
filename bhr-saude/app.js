@@ -190,8 +190,8 @@ function cancelarRest() {
 const SPLITS = {
   '6d': [
     { day: 'DOM', focus: 'OFF',      key: 'rest' },
-    { day: 'SEG', focus: 'PEITO/TRI',key: 'push1' },
-    { day: 'TER', focus: 'COSTAS/BI',key: 'pull1' },
+    { day: 'SEG', focus: 'COSTAS/BI',key: 'pull1' },
+    { day: 'TER', focus: 'PEITO/TRI',key: 'push1' },
     { day: 'QUA', focus: 'PERNA A',  key: 'legs1' },
     { day: 'QUI', focus: 'OMB/TRAP', key: 'shoulders' },
     { day: 'SEX', focus: 'BRAÇO',    key: 'arms' },
@@ -199,8 +199,8 @@ const SPLITS = {
   ],
   '5d': [
     { day: 'DOM', focus: 'OFF',      key: 'rest' },
-    { day: 'SEG', focus: 'PEITO/TRI',key: 'push1' },
-    { day: 'TER', focus: 'COSTAS/BI',key: 'pull1' },
+    { day: 'SEG', focus: 'COSTAS/BI',key: 'pull1' },
+    { day: 'TER', focus: 'PEITO/TRI',key: 'push1' },
     { day: 'QUA', focus: 'OFF',      key: 'rest' },
     { day: 'QUI', focus: 'OMB/TRAP', key: 'shoulders' },
     { day: 'SEX', focus: 'BRAÇO',    key: 'arms' },
@@ -1302,6 +1302,21 @@ document.querySelectorAll('.split-btn').forEach(btn => {
 
 // ---------- CONTROLE DE CICLO ---------------------------------------
 // Desfaz o último avanço de cursor (caso tenha marcado/pulado por engano).
+document.getElementById('resetCiclo').onclick = () => {
+  if (!confirm('Zerar o ciclo? O contador de sessões volta para 1 e a fila reinicia. Readiness e histórico de jejum são preservados.')) return;
+  state.cursor = 0;
+  state.completedCount = 0;
+  state.exercises = {};
+  state.meals = {};
+  state.fastToday = false;
+  state.restDayToday = '';
+  state.skipNextRest = false;
+  saveState();
+  renderWeek();
+  renderWorkout();
+  renderMeals();
+};
+
 const undoBtn = document.getElementById('undoSession');
 if (undoBtn) {
   undoBtn.onclick = () => {
